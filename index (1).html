@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F2F2EF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#17181A" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mi clóset">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="icono.png">
+<title>Mi clóset</title>
+<style>
+/* ============================================================
+   TOKENS
+   El fondo es neutro a propósito: los colores de las prendas
+   se juzgan mejor sobre gris que sobre un fondo teñido.
+   --accent sale de tu paleta (Perfil → Color de la app).
+   ============================================================ */
+:root{
+  --bg:#F2F2EF; --surface:#FFFFFF; --ink:#1C1E20; --ink2:#5A5E63; --ink3:#8B8E92; --line:#DEDEDA;
+  --fill:rgba(118,118,128,.12); --ring:#1C1E20; --swline:rgba(0,0,0,.12);
+  --accent:#1F5560; --accent-claro:#8FB4BC; --tinta-accent:var(--accent);
+  --si:#556B2F; --ojo:#8E3B2F;
+  --redonda:ui-rounded,"SF Pro Rounded",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --tabs:54px;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#17181A;--surface:#212326;--ink:#EDEDEA;--ink2:#A3A6A9;--ink3:#74777B;--line:#33363A;
+    --fill:rgba(118,118,128,.24);--ring:#EDEDEA;--swline:rgba(255,255,255,.16);--tinta-accent:var(--accent-claro);--si:#9DB56F;--ojo:#E08A7C;}
+}
+:root[data-theme="dark"]{--bg:#17181A;--surface:#212326;--ink:#EDEDEA;--ink2:#A3A6A9;--ink3:#74777B;--line:#33363A;
+  --fill:rgba(118,118,128,.24);--ring:#EDEDEA;--swline:rgba(255,255,255,.16);--tinta-accent:var(--accent-claro);--si:#9DB56F;--ojo:#E08A7C;}
+
+*,*::before,*::after{box-sizing:inherit;margin:0;padding:0}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{min-height:100%;background:var(--bg);color:var(--ink);
+  font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--tinta-accent);outline-offset:3px;border-radius:12px}
+input,select,textarea{font:inherit;color:inherit}
+[hidden]{display:none!important}
+.wrap{max-width:560px;margin:0 auto;padding:0 18px calc(var(--tabs) + env(safe-area-inset-bottom,0px) + 104px)}
+
+/* Encabezado de pantalla */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 0 12px}
+.titulo{font:700 30px/1.1 var(--redonda);letter-spacing:-.02em}
+.sync{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px 0 11px;border-radius:20px;background:var(--fill);
+  font-size:13px;font-weight:600;color:var(--ink2);white-space:nowrap}
+.sync svg{width:16px;height:16px}
+.sync[data-estado="cargando"] svg,.sync[data-estado="enviando"] svg{animation:giro .9s linear infinite}
+.sync[data-estado="pendiente"]{color:var(--ojo)}
+@keyframes giro{to{transform:rotate(360deg)}}
+
+/* Control segmentado */
+.seg2{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:2px;padding:2px;border-radius:11px;background:var(--fill)}
+.seg2 button{min-height:36px;border-radius:9px;font-size:14px;font-weight:600;color:var(--ink2)}
+.seg2 button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.14)}
+
+/* Progreso = resumen del outfit */
+.rail{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);margin-top:10px;
+  display:grid;grid-template-columns:repeat(var(--n,6),1fr);padding:10px 0 12px;border-bottom:1px solid var(--line)}
+.segm{display:flex;flex-direction:column;align-items:center;gap:6px;min-height:52px;padding:2px 0}
+.dot{width:26px;height:26px;border-radius:50%;border:1.5px dashed var(--ink3);position:relative;overflow:hidden}
+.segm.done .dot{border:0;box-shadow:inset 0 0 0 1px var(--swline)}
+.segm.now .dot{border:2px solid var(--ring)}
+.segm.done.now .dot{border:0;box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ring)}
+.dot i{position:absolute;inset:0 0 0 50%}
+.segm span:last-child{font-size:11px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.segm.now span:last-child{color:var(--ink);font-weight:650}
+.segm.skip .dot{border-style:solid;opacity:.5}
+.segm.skip .dot::after{content:"";position:absolute;left:4px;right:4px;top:50%;height:1.5px;background:var(--ink2)}
+.dot.none,.c.none{border:1.5px dashed var(--ink2)!important;background:transparent!important}
+
+/* Paso del configurador */
+.step{padding-top:24px}
+.q{font:700 24px/1.15 var(--redonda);letter-spacing:-.02em}
+.count{margin-top:8px;font-size:15px;color:var(--ink2)}
+.count b{color:var(--ink);font-weight:650;font-variant-numeric:tabular-nums}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.chip{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:0 14px;border-radius:20px;border:1px solid var(--line);font-size:14px;font-weight:550;color:var(--ink2)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.chip .pt{width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--swline)}
+.grid{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(146px,1fr));gap:18px 14px;margin-top:22px}
+.opt{display:block;width:100%;text-align:left;border-radius:16px}
+.sw{display:block;height:76px;border-radius:14px;box-shadow:inset 0 0 0 1px var(--swline);position:relative;overflow:hidden;transition:transform .12s}
+.opt:active .sw{transform:scale(.97)}
+.sw i{position:absolute;top:0;right:0;bottom:0;width:38%}
+.sw.none{background:transparent!important;box-shadow:none;border:1.5px dashed var(--ink2)}
+.opt.sel .sw{box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--ring)}
+.nm{display:block;margin-top:9px;font-size:15px;font-weight:600;line-height:1.25}
+.nm small{font-size:12px;color:var(--tinta-accent);margin-left:4px}
+.hx{display:block;margin-top:2px;font-size:12px;color:var(--ink2);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.opt.off{cursor:not-allowed;opacity:.4}
+.opt.off .sw::after{content:"";position:absolute;inset:0;background:linear-gradient(to top right,transparent calc(50% - 1px),var(--bg) calc(50% - 1px),var(--bg) calc(50% + 1px),transparent calc(50% + 1px))}
+.opt.off .nm{font-weight:500}
+
+/* Resultado */
+.done-wrap{padding-top:24px}
+.result{display:grid;grid-template-columns:132px 1fr;gap:26px;align-items:start;margin-top:20px}
+.fig{display:flex;flex-direction:column;align-items:center;width:132px}
+.fig svg{width:58px;height:22px;margin-bottom:8px}
+.f-top{width:120px;height:104px;border-radius:30px 30px 8px 8px;display:flex;overflow:hidden;box-shadow:inset 0 0 0 1px var(--swline);position:relative}
+.f-top .ly{width:26%}.f-top .tp{flex:1}
+.f-top .w{position:absolute;right:6px;bottom:12px;width:12px;height:12px;border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.18)}
+.f-belt{width:112px;height:10px;box-shadow:inset 0 0 0 1px var(--swline)}
+.f-pant{width:112px;height:128px;display:flex;gap:6px}
+.f-pant i{flex:1;border-radius:0 0 6px 6px;box-shadow:inset 0 0 0 1px var(--swline)}
+.f-shoe{width:122px;display:flex;justify-content:space-between;margin-top:4px}
+.f-shoe i{width:54px;height:16px;border-radius:9px 12px 4px 4px;box-shadow:inset 0 0 0 1px var(--swline)}
+.f-shoe i:first-child{border-radius:12px 9px 4px 4px}
+.items{list-style:none;display:flex;flex-direction:column;gap:14px}
+.items li{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start}
+.items .c{width:30px;height:30px;border-radius:9px;box-shadow:inset 0 0 0 1px var(--swline);position:relative;overflow:hidden}
+.items .c i{position:absolute;inset:0 0 0 50%}
+.items .k{display:block;font-size:12px;color:var(--ink2)}
+.items .v{display:block;font-size:15px;font-weight:600;line-height:1.25}
+.items .h{display:block;font-size:12px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px;justify-items:center}
+.duo figure{display:flex;flex-direction:column;align-items:center;gap:10px}
+.duo figcaption{font-size:13px;font-weight:650}
+.duo .fig{transform:scale(.92);transform-origin:top center;margin-bottom:-24px}
+.keep{margin-top:22px}
+.sub{font-size:13px;color:var(--ink2);margin:24px 0 12px}
+.unote{margin-top:10px;font-size:14px;color:var(--ink2);max-width:46ch}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.tag{font-size:12.5px;font-weight:550;padding:5px 10px;border-radius:9px;background:var(--fill);color:var(--ink2)}
+.tag.ojo{color:var(--ojo)}
+.pista{margin-top:14px;padding:12px 14px;border-radius:14px;background:var(--surface);font-size:14px;color:var(--ink2);display:flex;gap:12px;align-items:center;justify-content:space-between}
+.pista .chip{flex:none;color:var(--ink)}
+@media (max-width:360px){.result{grid-template-columns:1fr}.fig{margin:0 auto}}
+
+/* Botones */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;border-radius:26px;background:var(--ink);color:var(--bg);font-weight:650;font-size:16px;padding:0 20px}
+.btn.sec{background:none;color:var(--ink);border:1px solid var(--line)}
+.btn.acento{background:var(--accent);color:#fff}
+.btn.peligro{background:none;color:var(--ojo);border:1px solid var(--line)}
+.btn[disabled]{opacity:.45}
+.btn svg{width:20px;height:20px}
+.pila{display:flex;flex-direction:column;gap:10px;margin-top:26px}
+.note{margin-top:12px;font-size:13px;color:var(--ink2);text-align:center}
+
+/* Barra de contexto (encima de las pestañas) */
+.ctx{position:fixed;left:0;right:0;bottom:calc(var(--tabs) + env(safe-area-inset-bottom,0px));z-index:6;background:var(--bg);border-top:1px solid var(--line);padding:8px 18px}
+.ctx .in{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:10px;min-height:48px}
+.ctx .hint{flex:1;font-size:13px;color:var(--ink2);text-align:center;font-variant-numeric:tabular-nums}
+.mini-btn{min-height:44px;padding:0 16px;border-radius:22px;border:1px solid var(--line);font-size:15px;font-weight:600}
+.mini-btn.ico{width:48px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+.mini-btn.ico svg{width:22px;height:22px}
+.mini-btn.ico[aria-pressed="true"]{color:var(--ojo);border-color:currentColor}
+.mini-btn.ico[aria-pressed="true"] svg{fill:currentColor}
+.ctx .btn{min-height:48px;flex:1}
+
+/* Pestañas */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:7;background:var(--bg);background:color-mix(in srgb,var(--bg) 86%,transparent);
+  -webkit-backdrop-filter:saturate(1.6) blur(18px);backdrop-filter:saturate(1.6) blur(18px);
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);height:var(--tabs)}
+.tabs button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10.5px;font-weight:600;color:var(--ink3)}
+.tabs svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tabs button[aria-current="page"]{color:var(--tinta-accent)}
+
+/* Listas agrupadas */
+.grupo{margin-top:26px}
+.grupo>h2{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13px;font-weight:600;color:var(--ink2);padding:0 4px 8px}
+.grupo>h2 span{font-weight:500;font-variant-numeric:tabular-nums}
+.caja{background:var(--surface);border-radius:16px;overflow:hidden}
+.fila{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;min-height:56px;padding:8px 14px;position:relative}
+.fila+.fila::before{content:"";position:absolute;top:0;left:14px;right:0;height:1px;background:var(--line)}
+.fila.sin-ico{grid-template-columns:1fr auto}
+.fila .abre{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;text-align:left;grid-column:1/3;min-height:40px}
+.fila.sin-ico .abre{grid-template-columns:1fr;grid-column:1}
+.cuad{width:34px;height:34px;border-radius:10px;box-shadow:inset 0 0 0 1px var(--swline);position:relative;overflow:hidden;flex:none}
+.cuad i{position:absolute;inset:0 0 0 50%}
+.t1{display:block;font-size:16px;font-weight:550;line-height:1.25}
+.t1 small{font-size:12px;color:var(--tinta-accent);margin-left:4px}
+.t2{display:block;font-size:13px;color:var(--ink2);line-height:1.3;margin-top:1px}
+.t2.ojo{color:var(--ojo)}
+.valor{font-size:15px;color:var(--ink2);text-align:right;max-width:46vw}
+.flecha{color:var(--ink3);font-size:20px;line-height:1}
+.fila select{appearance:none;-webkit-appearance:none;background:var(--fill);border:0;border-radius:10px;padding:8px 12px;font-size:15px;max-width:44vw}
+.fila.bloque{display:block;padding:12px 14px}
+.fila.bloque .t2{margin-top:4px;font-size:14.5px;color:var(--ink)}
+
+/* Interruptor */
+.switch{width:51px;height:31px;border-radius:16px;background:var(--fill);position:relative;transition:background .18s;flex:none}
+.switch i{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.22);transition:transform .18s}
+.switch[aria-checked="true"]{background:var(--si)}
+.switch[aria-checked="true"] i{transform:translateX(20px)}
+.switch[disabled]{opacity:.4}
+
+/* Inventario */
+.resumen{background:var(--surface);border-radius:16px;padding:16px;margin-top:4px}
+.resumen .num{font:700 22px/1.15 var(--redonda);letter-spacing:-.01em}
+.prog{height:8px;border-radius:4px;background:var(--fill);overflow:hidden;margin:12px 0 10px}
+.prog i{display:block;height:100%;background:var(--si);border-radius:4px}
+.resumen p{font-size:14px;color:var(--ink2)}
+.puntos{display:flex;gap:4px;flex-wrap:wrap}
+.puntos i{width:12px;height:12px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--swline);opacity:.28}
+.puntos i.si{opacity:1}
+
+/* Favoritos */
+.favs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+.fav{background:var(--surface);border-radius:16px;padding:14px 12px 12px;text-align:left;display:block;width:100%}
+.fav .lam{height:150px;display:flex;justify-content:center;align-items:flex-start;gap:12px;overflow:hidden}
+.fav .lam .fig{flex:none;transform:scale(.5);transform-origin:top center;margin:0 -33px}
+.fav .t1{font-size:15px;margin-top:8px}
+
+/* Perfil */
+.heroe{background:var(--surface);border-radius:16px;padding:18px 16px}
+.heroe .est{font:700 22px/1.2 var(--redonda);letter-spacing:-.01em}
+.heroe p{font-size:14.5px;color:var(--ink2);margin-top:8px}
+.paleta{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:12px 8px;padding:14px}
+.paleta div{font-size:11.5px;line-height:1.25;color:var(--ink2);text-align:center}
+.paleta b{display:block;height:44px;border-radius:12px;box-shadow:inset 0 0 0 1px var(--swline);margin-bottom:5px;position:relative;overflow:hidden}
+.paleta .no b::after{content:"";position:absolute;inset:0;background:linear-gradient(to top right,transparent calc(50% - 1px),var(--ojo) calc(50% - 1px),var(--ojo) calc(50% + 1px),transparent calc(50% + 1px))}
+.colores{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.colores button{width:32px;height:32px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--swline)}
+.colores button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--ring)}
+details.caja summary{list-style:none;padding:14px;font-size:15px;font-weight:550;display:flex;justify-content:space-between;cursor:pointer}
+details.caja summary::-webkit-details-marker{display:none}
+details.caja ul{list-style:none;padding:0 14px 12px;font-size:13.5px;color:var(--ink2);display:flex;flex-direction:column;gap:6px}
+details.caja ul b{color:var(--ink);font-weight:600}
+
+/* Vacíos */
+.vacio{margin-top:26px;padding:22px 18px;border-radius:16px;background:var(--surface);font-size:15px;color:var(--ink2);line-height:1.45}
+.vacio b{display:block;color:var(--ink);font-size:17px;margin-bottom:6px}
+.vacio .btn{margin-top:14px}
+
+/* Hoja inferior */
+.velo{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.38);animation:aparece .18s ease-out}
+.hoja{position:fixed;left:0;right:0;bottom:0;z-index:21;max-height:92%;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  background:var(--bg);border-radius:20px 20px 0 0;padding:8px 18px calc(22px + env(safe-area-inset-bottom,0px));animation:sube .24s cubic-bezier(.2,.8,.2,1)}
+.hoja .in{max-width:560px;margin:0 auto}
+.hoja .asa{width:36px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 10px}
+.hoja .cab{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px}
+.hoja .cab h2{font:700 20px/1.2 var(--redonda);letter-spacing:-.01em}
+.enlace{color:var(--tinta-accent);font-weight:600;font-size:16px;min-height:44px;padding:0 4px}
+.campo{display:block;margin-top:16px}
+.campo>span{display:block;font-size:13px;font-weight:600;color:var(--ink2);margin:0 4px 6px}
+.campo input[type=text],.campo input[type=url],.campo textarea,.campo select{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:16px;appearance:none;-webkit-appearance:none}
+.campo textarea{min-height:92px;resize:vertical}
+.color-in{display:grid;grid-template-columns:52px 1fr;gap:10px}
+.color-in input[type=color]{width:52px;height:48px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:4px}
+@keyframes sube{from{transform:translateY(100%)}to{transform:none}}
+@keyframes aparece{from{opacity:0}to{opacity:1}}
+
+/* Primera vez */
+#setup{max-width:560px;margin:0 auto;padding:12vh 22px 40px}
+#setup h1{font:700 32px/1.1 var(--redonda);letter-spacing:-.02em}
+#setup p{margin-top:12px;font-size:16px;color:var(--ink2);line-height:1.45}
+#setup .err{color:var(--ojo);font-size:14.5px;margin-top:12px;min-height:20px}
+#setup ol{margin:18px 0 0 20px;font-size:14.5px;color:var(--ink2);display:flex;flex-direction:column;gap:6px}
+
+/* Aviso breve */
+.toast{position:fixed;left:50%;bottom:calc(var(--tabs) + env(safe-area-inset-bottom,0px) + 84px);z-index:30;transform:translate(-50%,10px);
+  max-width:min(88vw,460px);padding:11px 16px;border-radius:14px;background:var(--ink);color:var(--bg);font-size:14.5px;font-weight:550;text-align:center;
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+.toast.ver{opacity:1;transform:translate(-50%,0)}
+
+.fade{animation:f .18s ease-out}
+@keyframes f{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+<noscript><style>#app,#setup{display:none!important}.nojs{max-width:520px;margin:28px auto;padding:18px;border:1px solid var(--line);border-radius:16px;font-size:15px;line-height:1.5;color:var(--ink2)}.nojs b{color:var(--ink)}</style></noscript>
+</head>
+<body>
+<noscript><div class="nojs"><b>Abre esta página en Safari.</b><br>La vista previa del teléfono (Archivos, WhatsApp, correo) no ejecuta la app.</div></noscript>
+
+<!-- Primera vez: pedir la URL del Apps Script -->
+<section id="setup" hidden>
+  <h1>Conecta tu hoja</h1>
+  <p>Mi clóset guarda todo en tu Google Sheets. Pega la URL de implementación de tu Apps Script; se guarda en este teléfono y no se vuelve a pedir.</p>
+  <label class="campo"><span>URL de la aplicación web</span>
+    <input type="url" id="setup-url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec"></label>
+  <p class="err" id="setup-err" role="alert"></p>
+  <div class="pila" style="margin-top:8px">
+    <button class="btn acento" id="setup-ok" type="button">Conectar</button>
+    <button class="btn sec" id="setup-cancel" type="button" hidden>Cancelar</button>
+  </div>
+  <ol>
+    <li>En tu hoja: Extensiones → Apps Script.</li>
+    <li>Implementar → Administrar implementaciones.</li>
+    <li>Copia la URL que termina en <b>/exec</b>.</li>
+  </ol>
+</section>
+
+<div id="app" hidden>
+  <main class="wrap" id="pantalla"></main>
+  <div class="ctx" id="ctx" hidden><div class="in" id="ctx-in"></div></div>
+  <nav class="tabs" aria-label="Secciones"><div class="in" id="tabs">
+    <button type="button" data-tab="armar"><svg viewBox="0 0 24 24"><path d="M12 8.6V7.7a2.2 2.2 0 1 0-2.2-2.2"/><path d="M12 8.6 3.7 14.5a1.3 1.3 0 0 0 .8 2.4h15a1.3 1.3 0 0 0 .8-2.4L12 8.6z"/></svg>Armar</button>
+    <button type="button" data-tab="azar"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3.6"/><circle cx="8.8" cy="8.8" r=".6"/><circle cx="15.2" cy="8.8" r=".6"/><circle cx="12" cy="12" r=".6"/><circle cx="8.8" cy="15.2" r=".6"/><circle cx="15.2" cy="15.2" r=".6"/></svg>Al azar</button>
+    <button type="button" data-tab="favoritos"><svg viewBox="0 0 24 24"><path d="M12 20s-7.2-4.5-7.2-9.8A4.1 4.1 0 0 1 12 7.7a4.1 4.1 0 0 1 7.2 2.5C19.2 15.5 12 20 12 20z"/></svg>Favoritos</button>
+    <button type="button" data-tab="inventario"><svg viewBox="0 0 24 24"><rect x="4" y="4.5" width="16" height="4.2" rx="1.6"/><rect x="4" y="10" width="16" height="4.2" rx="1.6"/><rect x="4" y="15.5" width="16" height="4.2" rx="1.6"/></svg>Inventario</button>
+    <button type="button" data-tab="perfil"><svg viewBox="0 0 24 24"><circle cx="12" cy="8.4" r="3.6"/><path d="M4.8 20c.8-3.6 3.7-5.6 7.2-5.6s6.4 2 7.2 5.6"/></svg>Perfil</button>
+  </div></nav>
+</div>
+
+<div class="velo" id="velo" hidden></div>
+<div class="hoja" id="hoja" role="dialog" aria-modal="true" hidden><div class="in" id="hoja-in"></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+'use strict';
+/* ============================================================
+   MI CLÓSET
+   Este archivo solo trae interfaz y lógica. Todos los datos
+   (prendas, combinaciones, reglas, perfil, favoritos) viven en
+   Google Sheets y llegan por la API de Apps Script.
+
+   1. Almacén local y API        4. Estado de la interfaz
+   2. Motor de combinaciones     5. Pantallas
+   3. Análisis de color          6. Acciones y arranque
+   ============================================================ */
+
+/* ============================================================
+   1. ALMACÉN LOCAL Y API
+   ============================================================ */
+const K = { url: 'micloset.url', datos: 'micloset.datos', cola: 'micloset.cola' };
+const ls = {
+  get(k){ try { const v = localStorage.getItem(k); return v == null ? null : JSON.parse(v); } catch (e) { return null; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+const hexOk = h => /^#[0-9a-f]{6}$/i.test(String(h || ''));
+const fill = c => c && hexOk(c.hex) ? `background:${c.hex}` : '';
+const half = c => c && hexOk(c.hex2) ? `<i style="background:${c.hex2}"></i>` : '';
+const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
+const si = v => v === true || v === 'true' || v === 'TRUE';
+const corto = n => String(n || '').split(' / ')[0].replace(/\s*\(.*?\)\s*/g, '').trim();
+
+let API = ls.get(K.url);          // URL de implementación del Apps Script (se pide una sola vez)
+let D = null;                     // última copia de los datos de Google Sheets
+let cola = ls.get(K.cola) || [];  // cambios hechos en la app que aún no llegan a Google Sheets
+let enVuelo = 0, enviando = false, cargando = false;
+
+async function pedir(url, opciones){
+  const ctl = new AbortController(), reloj = setTimeout(() => ctl.abort(), 25000);
+  try {
+    const r = await fetch(url, Object.assign({ redirect: 'follow', signal: ctl.signal }, opciones));
+    const texto = await r.text();
+    try { return JSON.parse(texto); } catch (e) { throw new Error('NO_JSON'); }
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error('TIEMPO');
+    if (e.message === 'NO_JSON') throw e;
+    throw new Error('RED');
+  } finally { clearTimeout(reloj); }
+}
+/* Google Sheets → app */
+const apiLeer = (url, accion) => pedir(url + (url.indexOf('?') < 0 ? '?' : '&') + 'action=' + accion + '&t=' + Date.now(), { method: 'GET' });
+/* App → Google Sheets. Se envía como text/plain para que el navegador no haga la consulta previa (preflight) que Apps Script no contesta. */
+const apiEscribir = cuerpo => pedir(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(cuerpo) });
+
+const ERRORES = {
+  NO_JSON: 'La URL respondió, pero no como la API de Mi clóset. Revisa que termine en /exec y que el acceso sea «Cualquier usuario».',
+  RED: 'No se pudo conectar. Revisa tu conexión a internet.',
+  TIEMPO: 'Google tardó demasiado en responder. Intenta de nuevo.'
+};
+const textoError = e => ERRORES[e && e.message] || ('Google Sheets respondió: ' + ((e && e.message) || 'error desconocido'));
+const datosValidos = d => !!d && d.ok === true && ['categorias', 'prendas', 'combinaciones', 'reglas', 'perfil'].every(k => Array.isArray(d[k]));
+const guardar = () => ls.set(K.datos, D);
+
+function usarDatos(d){
+  d.evitar = d.evitar || []; d.favoritos = d.favoritos || []; d.cuando = Date.now();
+  D = d; guardar(); construir(); az.listo = false; revalidar();
+}
+
+/* Cada cambio se aplica al instante en pantalla y se manda a Google Sheets.
+   Si no hay señal, se queda en la cola (guardada en el teléfono) y se reintenta. */
+function encolar(op){
+  const ult = cola.length > enVuelo ? cola[cola.length - 1] : null;
+  if (ult && op.action === 'prenda.update' && ult.action === op.action && ult.id === op.id) Object.assign(ult.cambios, op.cambios);
+  else if (ult && op.action === 'perfil.set' && ult.action === op.action && ult.clave === op.clave) ult.valor = op.valor;
+  else cola.push(op);
+  ls.set(K.cola, cola); guardar(); vaciar();
+}
+async function vaciar(){
+  if (enviando || !cola.length || !API) { pintarSync(); return !cola.length; }
+  enviando = true; enVuelo = cola.length; pintarSync();
+  const lote = cola.slice(0, enVuelo);
+  let ok = false;
+  try {
+    const r = await apiEscribir(lote.length === 1 ? lote[0] : { action: 'batch', ops: lote });
+    if (!r || r.ok !== true) throw new Error((r && r.error) || 'RESPUESTA');
+    cola = cola.slice(lote.length); ls.set(K.cola, cola); ok = true;
+    const rechazo = (r.resultados || []).find(x => !x.ok);
+    if (rechazo) toast('Google Sheets rechazó un cambio: ' + rechazo.error + ' Pulsa Actualizar.', 6000);
+  } catch (e) { /* se queda en la cola */ }
+  enviando = false; enVuelo = 0;
+  if (ok && cola.length) return vaciar();
+  pintarSync(); return ok;
+}
+/* Botón «Actualizar datos»: primero sube lo pendiente, luego trae todo de Google Sheets. */
+async function actualizar(){
+  if (cargando) return;
+  cargando = true; pintarSync();
+  try {
+    await vaciar();
+    if (cola.length) { toast('Hay ' + plural(cola.length, 'cambio que no se pudo enviar', 'cambios que no se pudieron enviar') + '. Siguen guardados en el teléfono; intenta con mejor señal.', 5000); return; }
+    const d = await apiLeer(API, 'load');
+    if (!datosValidos(d)) throw new Error((d && d.error) || 'NO_JSON');
+    usarDatos(d); cargando = false; render(); toast('Datos actualizados');
+  } catch (e) { toast(textoError(e), 5000); }
+  finally { cargando = false; pintarSync(); }
+}
+
+/* ============================================================
+   2. MOTOR DE COMBINACIONES
+   Es el del HTML original: tres conjuntos de outfits reales.
+     PERSONAL   = combinaciones de tu análisis
+     TRABAJO    = playera de uniforme + base que armoniza con ella
+     COMBINADOS = misma base válida para la playera de trabajo
+                  y para la de cambio a la vez
+   Lo nuevo: se arma con las hojas de Google Sheets y después se
+   filtra por inventario.
+   ============================================================ */
+const SIN_CAPA = 'sin-capa';
+const CAMPOS = ['trabajo', 'superior', 'pantalon', 'zapatos', 'cinturon', 'capa', 'accesorios'];
+const BASE_KEYS = ['pantalon', 'zapatos', 'cinturon', 'capa', 'accesorios'];
+let pref = {}, CAT = {}, FUENTE = {}, IDX = {}, PID = {}, R = {};
+let TODOS = { personal: [], trabajo: [], combinados: [] }, PERSONAL = [], TRABAJO = [], COMBINADOS = [], avisos = [];
+
+const baseKey = o => BASE_KEYS.map(k => o[k]).join('|');
+const clave = o => CAMPOS.map(k => o[k] || '').join('|');
+function unicos(lista){ const visto = new Set(), out = []; for (const o of lista){ const k = clave(o); if (!visto.has(k)){ visto.add(k); out.push(o); } } return out; }
+
+function construir(){
+  avisos = [];
+  pref = {}; D.perfil.forEach(r => { pref[r.clave] = r.valor; });
+  CAT = {}; D.categorias.forEach(c => { c.usa_inventario = c.usa_inventario !== false && c.usa_inventario !== 'FALSE'; CAT[c.clave] = c; });
+  FUENTE = {}; IDX = {}; PID = {}; CAMPOS.forEach(k => { FUENTE[k] = []; IDX[k] = {}; });
+  D.prendas.forEach((p, i) => {
+    p.ord = i; p.tengo = si(p.tengo); p.disponible = !(p.disponible === false || p.disponible === 'FALSE');
+    if (!FUENTE[p.categoria]) { avisos.push(`Prendas: «${p.id}» tiene una categoría que no existe (${p.categoria}).`); return; }
+    if (PID[p.id]) { avisos.push(`Prendas: el id «${p.id}» está repetido; se usa el primero.`); return; }
+    FUENTE[p.categoria].push(p); IDX[p.categoria][p.id] = p; PID[p.id] = p;
+  });
+  const sinCapa = { id: SIN_CAPA, categoria: 'capa', nombre: 'Sin capa', hex: '', nota: 'Sin chamarra, suéter ni sobrecamisa.', ord: 1e6, fija: true };
+  FUENTE.capa.push(sinCapa); IDX.capa[SIN_CAPA] = sinCapa;
+
+  /* Hoja Reglas: pares «si → entonces» */
+  R = { cinturon: {}, acc: {}, uniPant: {}, uniCapa: {}, invisibles: {} };
+  const TIPOS = { cinturon_por_zapato: ['cinturon', 'zapatos', 'cinturon'], accesorios_por_cinturon: ['acc', 'cinturon', 'accesorios'],
+                  uniforme_pantalon: ['uniPant', 'trabajo', 'pantalon'], uniforme_capa: ['uniCapa', 'trabajo', 'capa'] };
+  D.reglas.forEach((r, i) => {
+    if (r.tipo === 'calcetines_invisibles') { R.invisibles[r.si] = true; return; }
+    const t = TIPOS[r.tipo];
+    if (!t) { avisos.push(`Reglas, fila ${i + 2}: tipo desconocido «${r.tipo}».`); return; }
+    if ((r.si !== '*' && !IDX[t[1]][r.si]) || !IDX[t[2]][r.entonces]) { avisos.push(`Reglas, fila ${i + 2}: «${r.si}» o «${r.entonces}» no existe en Prendas.`); return; }
+    (R[t[0]][r.si] ||= []).push(r.entonces);
+  });
+  const accPara = b => R.acc[b] || R.acc['*'] || [];
+
+  /* Hoja Combinaciones */
+  const combos = D.combinaciones.map((c, i) => {
+    if (c.activa === false || c.activa === 'FALSE') return null;
+    const zap = [c.zapato_1, c.zapato_2].filter(Boolean);
+    const mal = [['superior', c.superior], ['pantalon', c.pantalon], ['capa', c.capa]].concat(zap.map(z => ['zapatos', z])).filter(([k, id]) => id && !IDX[k][id]);
+    if (!c.superior || !c.pantalon || !zap.length || mal.length) {
+      avisos.push(`Combinaciones, fila ${i + 2}: ` + (mal.length ? `«${mal[0][1]}» no existe en Prendas.` : 'falta superior, pantalón o zapato.'));
+      return null;
+    }
+    return { superior: c.superior, pantalon: c.pantalon, zapatos: zap, capa: c.capa || null };
+  }).filter(Boolean);
+
+  const personal = unicos(combos.flatMap(c => c.zapatos.flatMap(z => (R.cinturon[z] || []).flatMap(b => accPara(b).flatMap(a =>
+    (c.capa ? [c.capa, SIN_CAPA] : [SIN_CAPA]).map(k => ({ trabajo: null, superior: c.superior, pantalon: c.pantalon, zapatos: z, cinturon: b, capa: k, accesorios: a })))))));
+
+  /* Lo que el análisis dice que va con cada pantalón */
+  const ZAP = {}, CAPA = {};
+  combos.forEach(c => { (ZAP[c.pantalon] ||= new Set()); c.zapatos.forEach(z => ZAP[c.pantalon].add(z)); (CAPA[c.pantalon] ||= new Set()); if (c.capa) CAPA[c.pantalon].add(c.capa); });
+  const trabajo = unicos(FUENTE.trabajo.flatMap(u => (R.uniPant[u.id] || []).flatMap(p => [...(ZAP[p] || [])].flatMap(z => (R.cinturon[z] || []).flatMap(b => accPara(b).flatMap(a =>
+    [...(R.uniCapa[u.id] || []).filter(k => CAPA[p] && CAPA[p].has(k)), SIN_CAPA].map(k => ({ trabajo: u.id, superior: null, pantalon: p, zapatos: z, cinturon: b, capa: k, accesorios: a }))))))));
+
+  const porBase = {};
+  personal.forEach(o => (porBase[baseKey(o)] ||= []).push(o.superior));
+  const combinados = trabajo.flatMap(t => (porBase[baseKey(t)] || []).map(s => Object.assign({}, t, { superior: s })));
+
+  TODOS = { personal, trabajo, combinados };
+  aplicarInventario(); aplicarColor();
+}
+
+/* Inventario: «tengo» + «disponible» deciden qué entra a los outfits */
+const controla = k => !!CAT[k] && CAT[k].usa_inventario !== false;
+const laTengo = (k, id) => !id || id === SIN_CAPA || !controla(k) || !!(IDX[k][id] && IDX[k][id].tengo && IDX[k][id].disponible);
+const hay = (k, id) => !si(pref.solo_inventario) || laTengo(k, id);
+const estricto = o => CAMPOS.every(k => laTengo(k, o[k]));
+function aplicarInventario(){
+  const ok = o => CAMPOS.every(k => hay(k, o[k]));
+  PERSONAL = TODOS.personal.filter(ok); TRABAJO = TODOS.trabajo.filter(ok); COMBINADOS = TODOS.combinados.filter(ok);
+}
+
+/* ============================================================
+   3. ANÁLISIS DE COLOR EN LA LÓGICA
+   - Contraste: diferencia de luminosidad (L* de CIELAB) entre la
+     prenda de arriba y el pantalón (o la capa, si contrasta más),
+     comparada con tu contraste personal (Perfil → contraste).
+   - Nivel: los colores estrella pesan más en el azar.
+   ============================================================ */
+const memoLuz = {};
+function luz(hex){
+  if (memoLuz[hex] != null) return memoLuz[hex];
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(v => v <= .04045 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4));
+  const y = r * .2126 + g * .7152 + b * .0722;
+  return (memoLuz[hex] = 116 * (y > .008856 ? Math.cbrt(y) : 7.787 * y + 16 / 116) - 16);
+}
+const NIV_CONTRASTE = ['Bajo', 'Medio', 'Medio-alto', 'Alto'];
+const metaContraste = () => { const i = NIV_CONTRASTE.indexOf(String(pref.contraste || '')); return i < 0 ? 2 : i; };
+function contraste(o, cat){
+  const t = IDX[cat][o[cat]], p = IDX.pantalon[o.pantalon], k = o.capa && o.capa !== SIN_CAPA ? IDX.capa[o.capa] : null;
+  if (!t || !p || !hexOk(t.hex) || !hexOk(p.hex)) return null;
+  let d = Math.abs(luz(t.hex) - luz(p.hex));
+  if (k && hexOk(k.hex)) d = Math.max(d, Math.abs(luz(t.hex) - luz(k.hex)));
+  const i = d < 18 ? 0 : d < 38 ? 1 : d < 58 ? 2 : 3;
+  return { d, i, nombre: NIV_CONTRASTE[i], dist: Math.abs(i - metaContraste()) };
+}
+function peso(o, m){
+  let w = 1;
+  if (si(pref.azar_nivel)) {
+    const n = o.superior && IDX.superior[o.superior] ? Number(IDX.superior[o.superior].nivel) || 0 : 0;
+    w *= n >= 5 ? 3 : n === 4 ? 2 : n === 3 ? 1.2 : 1.5;
+    const k = o.capa !== SIN_CAPA ? IDX.capa[o.capa] : null;
+    if (k && Number(k.nivel) >= 5) w *= 1.25;
+  }
+  if (si(pref.azar_contraste)) { const c = contraste(o, m === 'trabajo' ? 'trabajo' : 'superior'); if (c) w *= [1.6, 1.25, .85, .6][c.dist]; }
+  return w;
+}
+function elegirConPeso(lista, m){
+  const pesos = lista.map(o => peso(o, m));
+  let r = Math.random() * pesos.reduce((a, b) => a + b, 0);
+  for (let j = 0; j < lista.length; j++) { r -= pesos[j]; if (r <= 0) return lista[j]; }
+  return lista[lista.length - 1];
+}
+/* Si el outfit va sin capa y queda por debajo de tu contraste, busca la capa compatible que más lo sube. */
+function sugerenciaCapa(o){
+  if (o.capa !== SIN_CAPA) return null;
+  const cat = modo === 'trabajo' ? 'trabajo' : 'superior', base = contraste(o, cat);
+  if (!base || base.i >= metaContraste()) return null;
+  let mejor = null;
+  conjunto(o).forEach(x => {
+    if (x.capa === SIN_CAPA || !CAMPOS.every(k => k === 'capa' || (x[k] || null) === (o[k] || null))) return;
+    const c = contraste(x, cat);
+    if (c && c.i > base.i && (!mejor || c.d > mejor.c.d)) mejor = { capa: IDX.capa[x.capa], c };
+  });
+  return mejor;
+}
+function mezclar(a, b, t){
+  const pa = [1, 3, 5].map(i => parseInt(a.slice(i, i + 2), 16)), pb = [1, 3, 5].map(i => parseInt(b.slice(i, i + 2), 16));
+  return '#' + pa.map((v, i) => Math.round(v + (pb[i] - v) * t).toString(16).padStart(2, '0')).join('');
+}
+function aplicarColor(){
+  const h = hexOk(pref.color_app) ? pref.color_app : '#1F5560', st = document.documentElement.style;
+  st.setProperty('--accent', h); st.setProperty('--accent-claro', mezclar(h, '#FFFFFF', .52));
+}
+
+/* ============================================================
+   4. ESTADO DE LA INTERFAZ
+   ============================================================ */
+let tab = 'armar';
+let modo = 'normal';        // 'normal' | 'trabajo'
+let sel = {};               // {categoria: id}
+let orden = [];             // orden en que se eligieron (para revalidar)
+let sinCambio = false;      // decidió no usar playera de cambio
+let vista = null;           // categoría abierta o 'final'
+let historial = [];
+let az = { modo: 'normal', playera: '', cambio: true, capa: 'Indistinto', actual: null, recientes: [], total: 0, nota: '', listo: false };
+let invVista = 'categoria';
+
+function cats(){
+  const base = D.categorias.filter(c => FUENTE[c.clave]).map(c => ({ key: c.clave, label: c.nombre, q: c.pregunta, n: [c.singular, c.plural] }));
+  if (modo === 'normal') return base.filter(c => c.key !== 'trabajo');
+  return base.map(c => c.key === 'superior' ? Object.assign({}, c, { label: 'Cambio', q: '¿A qué playera te cambias después?', n: ['playera de cambio', 'playeras de cambio'], opcional: true }) : c);
+}
+const conjunto = s => modo === 'normal' ? PERSONAL : (s.superior ? COMBINADOS : TRABAJO);
+const conjuntoTodo = s => modo === 'normal' ? TODOS.personal : (s.superior ? TODOS.combinados : TODOS.trabajo);
+const coincide = (o, s) => { for (const k in s) if (s[k] != null && o[k] !== s[k]) return false; return true; };
+const filtrar = s => conjunto(s).filter(o => coincide(o, s));
+const total = () => filtrar(sel).length;
+const completo = () => cats().every(c => c.opcional || sel[c.key]);
+const sinOutfits = () => !(modo === 'normal' ? PERSONAL : TRABAJO).length;
+const primeraObligatoria = () => { const c = cats().find(c => !sel[c.key] && !c.opcional); return c ? c.key : 'final'; };
+const nOut = n => plural(n, 'outfit posible', 'outfits posibles');
+const outfitDeSel = () => { const o = {}; CAMPOS.forEach(k => { o[k] = sel[k] || null; }); return o; };
+const subir = () => window.scrollTo(0, 0);
+
+function opciones(k){
+  const otras = Object.assign({}, sel); delete otras[k];
+  const esCambio = modo === 'trabajo' && k === 'superior';
+  const pool = esCambio ? COMBINADOS.filter(o => coincide(o, otras)) : filtrar(otras);
+  const poolTodo = (esCambio ? TODOS.combinados : conjuntoTodo(otras)).filter(o => coincide(o, otras));
+  const cuenta = {}, cuentaTodo = {};
+  pool.forEach(o => { cuenta[o[k]] = 1; }); poolTodo.forEach(o => { cuentaTodo[o[k]] = 1; });
+  const motivo = c => !cuentaTodo[c.id] ? 'No combina' : !laTengo(k, c.id) ? (c.tengo ? 'No disponible' : 'No la tienes') : 'Falta con qué usarla';
+  const lista = FUENTE[k].map(c => ({ c, ok: !!cuenta[c.id], motivo: cuenta[c.id] ? '' : motivo(c) }));
+  const prio = k === 'superior' ? (a, b) => ((Number(b.c.nivel) || 0) - (Number(a.c.nivel) || 0)) || (a.c.ord - b.c.ord) : (a, b) => a.c.ord - b.c.ord;
+  lista.sort((a, b) => (b.ok - a.ok) || prio(a, b));
+  return { lista, disponibles: lista.filter(x => x.ok).length, hayOtras: Object.keys(otras).length > 0 };
+}
+function siguiente(desde){
+  const cs = cats(), i0 = cs.findIndex(c => c.key === desde);
+  for (let s = 1; s <= cs.length; s++){
+    const c = cs[(i0 + s + cs.length) % cs.length];
+    if (!sel[c.key] && !(c.opcional && sinCambio)) return c.key;
+  }
+  return 'final';
+}
+function ir(v, push = true){ if (push && vista && vista !== v) historial.push(vista); vista = v; render(); subir(); }
+function elegir(k, id){
+  if (sel[k] === id) { delete sel[k]; orden = orden.filter(x => x !== k); render(); return; }
+  sel[k] = id; orden = orden.filter(x => x !== k); orden.push(k);
+  if (k === 'superior') sinCambio = false;
+  const nx = siguiente(k);
+  ir(nx === 'final' && !completo() ? primeraObligatoria() : nx);
+}
+/* Conserva lo elegido que siga siendo compatible, en el orden en que se eligió.
+   Se usa al cambiar de modo, al actualizar datos y al cambiar el inventario. */
+function revalidar(){
+  const nuevo = {}, validas = cats().map(c => c.key);
+  for (const k of orden){
+    if (sel[k] == null || validas.indexOf(k) < 0 || !IDX[k][sel[k]]) continue;
+    nuevo[k] = sel[k]; if (!filtrar(nuevo).length) delete nuevo[k];
+  }
+  sel = nuevo; orden = orden.filter(k => sel[k] != null); historial = [];
+  if (!sel.superior && modo === 'normal') sinCambio = false;
+  if (!vista || vista === 'final' || validas.indexOf(vista) < 0) { const c = cats().find(c => !sel[c.key] && !(c.opcional && sinCambio)); vista = c ? c.key : 'final'; }
+}
+function cambiarModo(m){
+  if (m === modo) return;
+  modo = m; if (m === 'normal') { delete sel.trabajo; sinCambio = false; }
+  vista = null; revalidar(); render(); subir();
+}
+function reiniciar(){ sel = {}; orden = []; sinCambio = false; historial = []; vista = cats()[0].key; render(); subir(); }
+function abrirEnArmar(m, o){
+  modo = m; sel = {}; orden = [];
+  cats().forEach(c => { if (o[c.key]) { sel[c.key] = o[c.key]; orden.push(c.key); } });
+  sinCambio = m === 'trabajo' && !o.superior; vista = 'final'; revalidar();
+  tab = 'armar'; cerrarHoja(); render(); subir();
+}
+
+/* Al azar */
+const claveVisual = o => [o.trabajo, o.superior, o.pantalon, o.zapatos, o.capa].join('|');
+function sortear(){
+  const m = az.modo; let nota = '';
+  let pool = m === 'normal' ? PERSONAL : (az.cambio ? COMBINADOS : TRABAJO);
+  if (m === 'trabajo' && az.playera) pool = pool.filter(o => o.trabajo === az.playera);
+  if (m === 'trabajo' && az.cambio && !pool.length) {
+    pool = TRABAJO.filter(o => !az.playera || o.trabajo === az.playera);
+    if (pool.length) nota = 'No hay playera de cambio que comparta toda la base; va solo el outfit de trabajo.';
+  }
+  if (az.capa !== 'Indistinto') {
+    const f = pool.filter(o => az.capa === 'Con capa' ? o.capa !== SIN_CAPA : o.capa === SIN_CAPA);
+    if (f.length) pool = f; else if (pool.length) nota = 'No hay opción ' + az.capa.toLowerCase() + ' para esta selección; se muestra otra.';
+  }
+  az.total = pool.length; az.nota = nota;
+  if (!pool.length) { az.actual = null; return; }
+  const frescos = pool.filter(o => az.recientes.indexOf(claveVisual(o)) < 0);
+  az.actual = elegirConPeso(frescos.length ? frescos : pool, m);
+  az.recientes.push(claveVisual(az.actual)); if (az.recientes.length > 12) az.recientes.shift();
+}
+
+/* Favoritos */
+const outfitDeFav = f => { const o = {}; CAMPOS.forEach(k => { o[k] = f[k] || null; }); return o; };
+const modoDeFav = f => f.modo === 'trabajo' ? 'trabajo' : 'normal';
+const favDe = (m, o) => D.favoritos.find(f => modoDeFav(f) === m && clave(outfitDeFav(f)) === clave(o));
+function hoy(){ const d = new Date(), p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
+function nombreAuto(m, o){
+  const arriba = m === 'trabajo' ? IDX.trabajo[o.trabajo] : IDX.superior[o.superior], pa = IDX.pantalon[o.pantalon];
+  return (m === 'trabajo' ? 'Trabajo ' + corto(arriba.nombre).toLowerCase() : corto(arriba.nombre)) + ' con ' + corto(pa.nombre).toLowerCase();
+}
+function alternarFav(m, o){
+  const ya = favDe(m, o);
+  if (ya) { D.favoritos = D.favoritos.filter(f => f !== ya); encolar({ action: 'favorito.delete', id: ya.id }); toast('Quitado de favoritos'); return; }
+  const f = { id: 'fav-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), fecha: hoy(), nombre: nombreAuto(m, o), modo: m, nota: '' };
+  CAMPOS.forEach(k => { f[k] = o[k] || ''; });
+  D.favoritos.push(f); encolar({ action: 'favorito.add', favorito: f }); toast('Guardado en favoritos');
+}
+
+/* Cambios que se guardan de inmediato */
+function cambiarPrenda(p, cambios){
+  Object.assign(p, cambios);
+  encolar({ action: 'prenda.update', id: p.id, cambios: Object.assign({}, cambios) });
+  aplicarInventario(); az.listo = false; revalidar();
+}
+function ponerPref(k, valor){
+  const fila = D.perfil.find(x => x.clave === k); if (fila) fila.valor = valor;
+  pref[k] = valor; encolar({ action: 'perfil.set', clave: k, valor });
+  if (k === 'solo_inventario') { aplicarInventario(); az.listo = false; revalidar(); }
+  if (k === 'color_app') aplicarColor();
+}
+/* Qué conviene conseguir: cuántos outfits completos abre cada prenda que falta */
+function faltantes(){
+  const uso = {}, abre = {};
+  for (const o of TODOS.personal.concat(TODOS.trabajo)) {
+    const falta = [];
+    for (const k of CAMPOS) { const id = o[k]; if (!id || id === SIN_CAPA) continue; uso[id] = (uso[id] || 0) + 1; if (!laTengo(k, id)) falta.push(id); }
+    if (falta.length === 1) abre[falta[0]] = (abre[falta[0]] || 0) + 1;
+  }
+  return D.prendas.filter(p => PID[p.id] === p && !p.tengo && controla(p.categoria))
+    .map(p => ({ p, uso: uso[p.id] || 0, abre: abre[p.id] || 0 }))
+    .sort((a, b) => (b.abre - a.abre) || (b.uso - a.uso) || (a.p.ord - b.p.ord));
+}
+
+/* ============================================================
+   5. PANTALLAS
+   ============================================================ */
+const ICO_SYNC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.4 9A8 8 0 0 0 5.2 6.7M4.6 15a8 8 0 0 0 14.2 2.3"/><path d="M19.6 4.2V9h-4.8M4.4 19.8V15h4.8"/></svg>';
+const ICO_COR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7.2-4.5-7.2-9.8A4.1 4.1 0 0 1 12 7.7a4.1 4.1 0 0 1 7.2 2.5C19.2 15.5 12 20 12 20z"/></svg>';
+const cabeza = t => `<header class="top"><h1 class="titulo">${t}</h1><button class="sync" id="sync" type="button" data-a="actualizar">${ICO_SYNC}<span>Actualizar</span></button></header>`;
+const seg = (n, ops, val) => `<div class="seg2" role="group">${ops.map(([v, t]) => `<button type="button" data-a="seg" data-n="${n}" data-v="${esc(v)}" aria-pressed="${String(v) === String(val)}">${esc(t)}</button>`).join('')}</div>`;
+const sw = (a, on, attrs, etiqueta) => `<button type="button" class="switch" role="switch" aria-checked="${!!on}" data-a="${a}" ${attrs || ''} aria-label="${esc(etiqueta || '')}"><i></i></button>`;
+
+function pintarSync(){
+  const b = $('sync'); if (!b) return;
+  const est = cargando ? 'cargando' : enviando ? 'enviando' : cola.length ? 'pendiente' : 'ok';
+  b.dataset.estado = est;
+  b.lastElementChild.textContent = est === 'cargando' ? 'Actualizando' : est === 'enviando' ? 'Guardando' : est === 'pendiente' ? plural(cola.length, 'cambio sin enviar', 'cambios sin enviar') : 'Actualizar';
+  b.setAttribute('aria-label', 'Actualizar datos desde Google Sheets');
+  const n = $('n-cola'); if (n) n.textContent = cola.length;
+}
+
+function render(){
+  if (!D) return;
+  document.querySelectorAll('#tabs button').forEach(b => b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
+  $('pantalla').innerHTML = ({ armar: vArmar, azar: vAzar, favoritos: vFavoritos, inventario: vInventario, perfil: vPerfil })[tab]();
+  const barra = tab === 'armar' ? ctxArmar() : tab === 'azar' ? ctxAzar() : '';
+  $('ctx').hidden = !barra; $('ctx-in').innerHTML = barra;
+  pintarSync();
+}
+
+/* ---------- Armar ---------- */
+function vArmar(){
+  const cs = cats();
+  if (vista === 'final' && !completo()) vista = primeraObligatoria();
+  if (vista !== 'final' && !cs.some(c => c.key === vista)) vista = cs[0].key;
+  const rail = `<nav class="rail" style="--n:${cs.length}" aria-label="Partes del outfit">${cs.map(p => {
+    const c = sel[p.key] ? IDX[p.key][sel[p.key]] : null, skip = p.opcional && sinCambio && !c;
+    return `<button type="button" class="segm ${c ? 'done' : ''} ${p.key === vista ? 'now' : ''} ${skip ? 'skip' : ''}" data-a="ir" data-k="${p.key}" aria-label="${esc(p.label + (c ? ': ' + c.nombre : ''))}" ${p.key === vista ? 'aria-current="true"' : ''}>
+      <span class="dot ${c && !hexOk(c.hex) ? 'none' : ''}" style="${fill(c)}">${half(c)}</span><span>${esc(p.label)}</span></button>`;
+  }).join('')}</nav>`;
+  return cabeza('Armar') + seg('modo', [['normal', 'Normal'], ['trabajo', 'Trabajo']], modo) + rail + (sinOutfits() ? vBloqueo() : vista === 'final' ? vFinal() : vCategoria(vista));
+}
+function vBloqueo(){
+  if (!(modo === 'normal' ? TODOS.personal : TODOS.trabajo).length)
+    return `<div class="vacio"><b>No hay combinaciones activas</b>Revisa las hojas Combinaciones y Reglas. Los avisos de datos están en Perfil, sección Conexión.</div>`;
+  const vacias = cats().filter(c => !c.opcional && controla(c.key) && !FUENTE[c.key].some(p => !p.fija && laTengo(c.key, p.id))).map(c => c.label.toLowerCase());
+  return `<div class="vacio"><b>Con tus prendas aún no sale un outfit</b>${vacias.length ? 'No tienes nada marcado en ' + vacias.join(', ') + '.' : 'Lo que tienes marcado no coincide en ninguna combinación completa.'} Marca lo que tienes en Inventario o usa toda tu paleta mientras tanto.
+    <button class="btn" type="button" data-a="tab" data-v="inventario">Ir a Inventario</button>
+    <button class="btn sec" type="button" data-a="paleta-completa" style="margin-top:10px">Usar toda mi paleta</button></div>`;
+}
+function vCategoria(k){
+  const p = cats().find(c => c.key === k), { lista, disponibles, hayOtras } = opciones(k);
+  const cards = lista.map(({ c, ok, motivo }) => `
+    <li><button type="button" class="opt ${sel[k] === c.id ? 'sel' : ''} ${ok ? '' : 'off'}" data-a="elegir" data-id="${esc(c.id)}" ${ok ? '' : 'disabled'} title="${esc(c.nota || '')}">
+      <span class="sw ${hexOk(c.hex) ? '' : 'none'}" style="${fill(c)}">${half(c)}</span>
+      <span class="nm">${esc(c.nombre)}${Number(c.nivel) === 5 ? '<small aria-label="color estrella">★</small>' : ''}</span>
+      <span class="hx">${ok ? (hexOk(c.hex) ? esc(c.hex) + (hexOk(c.hex2) ? ' / ' + esc(c.hex2) : '') : 'Opcional') : motivo}</span>
+    </button></li>`).join('');
+  const acts = [];
+  if (sel[k]) acts.push(`<button type="button" class="chip" data-a="quitar" data-k="${k}">Quitar selección</button>`);
+  if (p.opcional && !sel[k]) acts.push(`<button type="button" class="chip" data-a="sin-cambio">Seguir sin playera de cambio</button>`);
+  if (total() > 0) acts.push(`<button type="button" class="chip" data-a="completar">Completar al azar</button>`);
+  const pal = hayOtras ? (disponibles === 1 ? 'compatible' : 'compatibles') : (disponibles === 1 ? 'disponible' : 'disponibles');
+  return `<section class="step fade">
+    <h2 class="q">${esc(p.q)}</h2>
+    <p class="count"><b>${disponibles} ${esc(disponibles === 1 ? p.n[0] : p.n[1])} ${pal}</b>${p.opcional ? '<br>Opcional: el resto del outfit tendrá que funcionar con las dos playeras.' : ''}</p>
+    ${acts.length ? `<div class="acts">${acts.join('')}</div>` : ''}
+    <ul class="grid">${cards}</ul></section>`;
+}
+function figura(top, capa, b, pa, z, a){
+  const bandas = capa && hexOk(capa.hex), metal = hexOk(a.hex) ? a.hex : '#999999', arm = hexOk(a.hex2) ? a.hex2 : metal;
+  return `<div class="fig" aria-hidden="true">
+    <svg viewBox="0 0 58 22"><circle cx="13" cy="11" r="9" fill="none" stroke="${arm}" stroke-width="3"/><circle cx="45" cy="11" r="9" fill="none" stroke="${arm}" stroke-width="3"/><path d="M22 10q7-5 14 0" fill="none" stroke="${metal}" stroke-width="2.5"/></svg>
+    <div class="f-top">${bandas ? `<i class="ly" style="${fill(capa)}"></i>` : ''}<i class="tp" style="${fill(top)}"></i>${bandas ? `<i class="ly" style="${fill(capa)}"></i>` : ''}<i class="w" style="background:${metal}"></i></div>
+    <div class="f-belt" style="${fill(b)}"></div>
+    <div class="f-pant"><i style="${fill(pa)}"></i><i style="${fill(pa)}"></i></div>
+    <div class="f-shoe"><i style="${fill(z)}"></i><i style="${fill(z)}"></i></div></div>`;
+}
+const fila = (k, c, v, h) => `<li><span class="c ${c && hexOk(c.hex) ? '' : 'none'}" style="${fill(c)}">${half(c)}</span>
+  <span><span class="k">${k}</span><span class="v">${esc(v)}</span>${h ? `<span class="h">${esc(h)}</span>` : ''}</span></li>`;
+function filasBase(pa, z, b, ca, a){
+  /* Calcetines: del tono del pantalón (alarga la pierna). Con los zapatos de la regla calcetines_invisibles: invisibles. */
+  const calc = R.invisibles[z.id] ? fila('Calcetines', null, 'Invisibles', 'Si se ven: ' + pa.nombre.toLowerCase() + ' ' + (pa.hex || ''))
+                                  : fila('Calcetines', pa, pa.nombre, (pa.hex || '') + ' (mismo tono del pantalón)');
+  return fila('Pantalón', pa, pa.nombre, pa.hex) + calc + fila('Zapatos', z, z.nombre, z.hex) + fila('Cinturón', b, b.nombre, b.hex)
+       + fila('Capa', ca, ca.nombre, ca.hex || '') + fila('Metal', { hex: a.hex }, a.metal || a.nombre, a.hex)
+       + (a.armazon || hexOk(a.hex2) ? fila('Lentes', { hex: a.hex2 }, a.armazon || '', a.hex2) : '');
+}
+function etiquetas(m, o){
+  const out = [], meta = metaContraste();
+  const frase = c => c.dist === 0 ? 'igual al tuyo' : c.dist === 1 ? 'cercano al tuyo' : c.i < meta ? 'más bajo que el tuyo' : 'más alto que el tuyo';
+  const una = (cat, pre) => { const c = contraste(o, cat); if (c) out.push(`<span class="tag ${c.dist >= 2 ? 'ojo' : ''}">${pre}${pre ? 'contraste' : 'Contraste'} ${c.nombre.toLowerCase()}, ${frase(c)}</span>`); };
+  if (m === 'normal') una('superior', ''); else { una('trabajo', o.superior ? 'Trabajo: ' : ''); if (o.superior) una('superior', 'Después: '); }
+  const t = o.superior ? IDX.superior[o.superior] : null;
+  if (t && Number(t.nivel) === 5) out.push(`<span class="tag">★ ${esc(corto(t.nombre))}, color estrella</span>`);
+  return out.length ? `<div class="tags">${out.join('')}</div>` : '';
+}
+/* Un outfit completo: figura, lista de prendas y lectura de contraste. Lo usan Armar, Al azar y Favoritos. */
+function vistaOutfit(m, o, titulo){
+  const g = k => o[k] ? IDX[k][o[k]] : null;
+  const pa = g('pantalon'), z = g('zapatos'), b = g('cinturon'), ca = g('capa') || IDX.capa[SIN_CAPA], a = g('accesorios'), t = g('superior'), w = g('trabajo');
+  if (!pa || !z || !b || !a || (m === 'normal' ? !t : !w)) return `<div class="vacio"><b>Outfit incompleto</b>Usa una prenda que ya no existe en tu hoja.</div>`;
+  const h = txt => titulo ? `<h2 class="q">${txt}</h2>` : '', base = filasBase(pa, z, b, ca, a);
+  if (m === 'normal') return `${h('Outfit completo')}<div class="result">${figura(t, ca, b, pa, z, a)}<ul class="items">${fila('Arriba', t, t.nombre, t.hex)}${base}</ul></div>${etiquetas(m, o)}`;
+  if (t) return `${h('Outfit del día')}<p class="unote">Solo cambia la playera; todo lo demás se queda igual. ${esc(w.nota || '')}</p>
+    <div class="duo"><figure>${figura(w, ca, b, pa, z, a)}<figcaption>Trabajo</figcaption></figure><figure>${figura(t, ca, b, pa, z, a)}<figcaption>Después del trabajo</figcaption></figure></div>
+    ${etiquetas(m, o)}
+    <ul class="items keep">${fila('Playera de trabajo', w, w.nombre, w.hex)}${fila('Playera de cambio', t, t.nombre, t.hex)}</ul>
+    <p class="sub">Se mantiene todo el día</p><ul class="items">${base}</ul>`;
+  return `${h('Outfit de trabajo')}<p class="unote">${esc(w.nota || '')}</p>
+    <div class="result">${figura(w, ca, b, pa, z, a)}<ul class="items">${fila('Playera de trabajo', w, w.nombre, w.hex)}${base}</ul></div>${etiquetas(m, o)}`;
+}
+function vFinal(){
+  const o = outfitDeSel(), fav = favDe(modo, o), sug = sugerenciaCapa(o);
+  const n = modo === 'trabajo' && !o.superior ? opciones('superior').disponibles : 0;
+  return `<section class="done-wrap fade">${vistaOutfit(modo, o, true)}
+    ${sug ? `<div class="pista"><span>Con capa ${esc(corto(sug.capa.nombre).toLowerCase())} el contraste sube a ${sug.c.nombre.toLowerCase()}.</span><button type="button" class="chip" data-a="poner-capa" data-id="${esc(sug.capa.id)}">Agregar capa</button></div>` : ''}
+    <div class="pila">
+      ${n ? `<button type="button" class="btn sec" data-a="agregar-cambio">Agregar playera de cambio (${plural(n, 'compatible', 'compatibles')})</button>` : ''}
+      <button type="button" class="btn ${fav ? 'sec' : ''}" data-a="favorito">${ICO_COR}${fav ? 'Quitar de favoritos' : 'Guardar en favoritos'}</button>
+      <button type="button" class="btn sec" data-a="reiniciar">Crear otra combinación</button>
+    </div>
+    <p class="note">Toca cualquier círculo de arriba para cambiar esa parte.</p></section>`;
+}
+function ctxArmar(){
+  if (sinOutfits()) return '';
+  return `<button class="mini-btn" type="button" data-a="atras" ${historial.length ? '' : 'disabled style="opacity:.35"'}>‹ Atrás</button>
+    <span class="hint">${nOut(total())}</span>
+    <button class="mini-btn" type="button" data-a="reiniciar">Reiniciar</button>`;
+}
+
+/* ---------- Al azar ---------- */
+function vAzar(){
+  if (!az.listo) { sortear(); az.listo = true; }
+  const m = az.modo, o = az.actual;
+  const playeras = m === 'trabajo' ? `<div class="grupo" style="margin-top:18px"><h2>Playera de hoy</h2><div class="acts" style="margin-top:0">
+      <button type="button" class="chip" data-a="az-playera" data-id="" aria-pressed="${!az.playera}">Cualquiera</button>
+      ${FUENTE.trabajo.filter(u => hay('trabajo', u.id)).map(u => `<button type="button" class="chip" data-a="az-playera" data-id="${esc(u.id)}" aria-pressed="${az.playera === u.id}"><i class="pt" style="${fill(u)}"></i>${esc(u.nombre)}</button>`).join('')}
+    </div></div>` : '';
+  const cuerpo = o ? `<section class="done-wrap fade">${az.nota ? `<p class="unote" style="margin:0 0 6px">${esc(az.nota)}</p>` : ''}${vistaOutfit(m, o, false)}</section>`
+    : `<div class="vacio"><b>No hay outfits para sortear</b>${si(pref.solo_inventario) ? 'Con las prendas que tienes marcadas y estas opciones no sale ninguno. Cambia las opciones de abajo o revisa tu inventario.' : 'Cambia las opciones de abajo.'}
+        ${si(pref.solo_inventario) ? '<button class="btn" type="button" data-a="tab" data-v="inventario">Ir a Inventario</button>' : ''}</div>`;
+  const opcionesAzar = `<div class="grupo"><h2>Opciones del sorteo <span>${nOut(az.total)}</span></h2><div class="caja">
+      <div class="fila sin-ico"><span class="t1">Capa</span><select data-c="az-capa" aria-label="Capa">${['Indistinto', 'Con capa', 'Sin capa'].map(v => `<option ${az.capa === v ? 'selected' : ''} value="${v}">${v === 'Indistinto' ? 'Da igual' : v}</option>`).join('')}</select></div>
+      ${m === 'trabajo' ? `<div class="fila sin-ico"><span class="t1">Con playera de cambio</span>${sw('az-cambio', az.cambio, '', 'Con playera de cambio')}</div>` : ''}
+    </div></div>`;
+  return cabeza('Al azar') + seg('azmodo', [['normal', 'Normal'], ['trabajo', 'Trabajo']], m) + playeras + cuerpo + opcionesAzar;
+}
+function ctxAzar(){
+  const o = az.actual, fav = o && favDe(az.modo, o);
+  return `<button class="mini-btn ico" type="button" data-a="az-fav" aria-pressed="${!!fav}" aria-label="${fav ? 'Quitar de favoritos' : 'Guardar en favoritos'}" ${o ? '' : 'disabled'}>${ICO_COR}</button>
+    <button class="btn" type="button" data-a="az-otro" ${az.total ? '' : 'disabled'}>Otro outfit</button>
+    <button class="mini-btn" type="button" data-a="az-ajustar" ${o ? '' : 'disabled'}>Ajustar</button>`;
+}
+
+/* ---------- Favoritos ---------- */
+function faltaDe(o){
+  for (const k of CAMPOS) { const id = o[k]; if (!id || id === SIN_CAPA) continue; if (!IDX[k][id]) return 'una prenda que ya no existe'; if (si(pref.solo_inventario) && !laTengo(k, id)) return corto(IDX[k][id].nombre).toLowerCase(); }
+  return '';
+}
+function fechaCorta(f){
+  const p = String(f || '').split('-'); if (p.length < 3) return '';
+  return Number(p[2]) + ' ' + ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][Number(p[1]) - 1];
+}
+function laminas(m, o){
+  const g = k => o[k] ? IDX[k][o[k]] : null, pa = g('pantalon'), z = g('zapatos'), b = g('cinturon'), ca = g('capa'), a = g('accesorios') || {}, t = g('superior'), w = g('trabajo');
+  if (!pa || !z || !b) return '';
+  return m === 'trabajo' ? (w ? figura(w, ca, b, pa, z, a) : '') + (t ? figura(t, ca, b, pa, z, a) : '') : (t ? figura(t, ca, b, pa, z, a) : '');
+}
+function vFavoritos(){
+  const fs = D.favoritos.slice().reverse();
+  if (!fs.length) return cabeza('Favoritos') + `<div class="vacio" style="margin-top:4px"><b>Aún no guardas outfits</b>Cuando un resultado te guste, toca «Guardar en favoritos». Se guardan en tu Google Sheets, así que no se pierden al cambiar de teléfono.
+    <button class="btn" type="button" data-a="tab" data-v="azar">Probar uno al azar</button></div>`;
+  return cabeza('Favoritos') + `<div class="favs">${fs.map(f => {
+    const m = modoDeFav(f), o = outfitDeFav(f), falta = faltaDe(o);
+    return `<button type="button" class="fav" data-a="ver-fav" data-id="${esc(f.id)}"><div class="lam ${m === 'trabajo' && o.superior ? 'dos' : ''}">${laminas(m, o)}</div>
+      <span class="t1">${esc(f.nombre || 'Sin nombre')}</span><span class="t2 ${falta ? 'ojo' : ''}">${falta ? 'Falta ' + esc(falta) : (m === 'trabajo' ? 'Trabajo' : 'Normal') + (f.fecha ? ', ' + fechaCorta(f.fecha) : '')}</span></button>`;
+  }).join('')}</div>`;
+}
+function hojaFavorito(id){
+  const f = D.favoritos.find(x => String(x.id) === String(id)); if (!f) return;
+  const m = modoDeFav(f), o = outfitDeFav(f);
+  abrirHoja(`<div class="cab"><button class="enlace" type="button" data-a="cerrar">Cerrar</button><h2>Favorito</h2><button class="enlace" type="button" data-a="guardar-fav" data-id="${esc(f.id)}">Guardar</button></div>
+    <label class="campo"><span>Nombre</span><input type="text" id="f-nombre" value="${esc(f.nombre || '')}"></label>
+    ${vistaOutfit(m, o, false)}
+    <label class="campo"><span>Nota</span><textarea id="f-nota" placeholder="Cuándo lo usaste, con qué prendas exactas…">${esc(f.nota || '')}</textarea></label>
+    <div class="pila"><button class="btn" type="button" data-a="fav-armar" data-id="${esc(f.id)}">Abrir en Armar</button>
+    <button class="btn peligro" type="button" data-a="fav-borrar" data-id="${esc(f.id)}">Quitar de favoritos</button></div>`);
+}
+
+/* ---------- Inventario ---------- */
+function filaPrenda(p, sub){
+  const estado = p.tengo && !p.disponible ? '<span class="t2 ojo">No disponible por ahora</span>' : (sub ? `<span class="t2">${esc(sub)}</span>` : '');
+  return `<div class="fila"><button type="button" class="abre" data-a="editar" data-id="${esc(p.id)}"><span class="cuad" style="${fill(p)}">${half(p)}</span>
+    <span><span class="t1">${esc(p.nombre)}${Number(p.nivel) === 5 ? '<small aria-label="color estrella">★</small>' : ''}</span>${estado}</span></button>
+    ${sw('tengo', p.tengo, `data-id="${esc(p.id)}"`, 'Tengo ' + p.nombre)}</div>`;
+}
+const nomCat = k => CAT[k] ? CAT[k].nombre : k;
+function vInventario(){
+  const inv = D.prendas.filter(p => PID[p.id] === p), mias = inv.filter(p => p.tengo);
+  const n1 = TODOS.personal.filter(estricto).length, n2 = TODOS.trabajo.filter(estricto).length, solo = si(pref.solo_inventario);
+  const resumen = `<div class="resumen"><div class="num">Tengo ${mias.length} de ${inv.length} prendas</div>
+      <div class="prog"><i style="width:${inv.length ? Math.round(mias.length / inv.length * 100) : 0}%"></i></div>
+      <p>Con lo que tienes disponible salen ${plural(n1, 'outfit normal', 'outfits normales')} y ${n2} de trabajo.</p></div>
+    <div class="grupo" style="margin-top:12px"><div class="caja"><div class="fila sin-ico"><span><span class="t1">Generar solo con mis prendas</span>
+      <span class="t2">${solo ? 'Armar y Al azar usan únicamente lo que tienes y está disponible.' : 'Apagado: se usa toda tu paleta, tengas o no la prenda.'}</span></span>
+      ${sw('pref-sw', solo, 'data-k="solo_inventario"', 'Generar solo con mis prendas')}</div></div></div>
+    <div style="margin-top:18px">${seg('inv', [['categoria', 'Por categoría'], ['color', 'Por color'], ['falta', 'Me falta']], invVista)}</div>
+    <p class="note" style="text-align:left;margin:10px 4px 0">El interruptor marca si la tienes. Toca la prenda para editar su color, nota o disponibilidad.</p>`;
+  let cuerpo = '';
+  const bloque = (titulo, lista, sub) => `<div class="grupo"><h2>${esc(titulo)} <span>${lista.filter(p => p.tengo).length} de ${lista.length}</span></h2>
+      <div class="caja">${lista.map(p => filaPrenda(p, sub ? sub(p) : '')).join('')}</div></div>`;
+  if (invVista === 'categoria') {
+    cuerpo = D.categorias.filter(c => FUENTE[c.clave] && FUENTE[c.clave].some(p => !p.fija)).map(c => bloque(c.nombre, FUENTE[c.clave].filter(p => !p.fija))).join('');
+  } else if (invVista === 'color') {
+    const fams = []; inv.forEach(p => { const f = p.familia || 'Sin familia'; if (fams.indexOf(f) < 0) fams.push(f); });
+    cuerpo = fams.map(f => { const l = inv.filter(p => (p.familia || 'Sin familia') === f);
+      return `<div class="grupo"><h2>${esc(f)} <span>${l.filter(p => p.tengo).length} de ${l.length}</span></h2>
+        <div class="puntos" style="padding:0 4px 10px">${l.map(p => `<i class="${p.tengo ? 'si' : ''}" style="${fill(p)}"></i>`).join('')}</div>
+        <div class="caja">${l.map(p => filaPrenda(p, nomCat(p.categoria))).join('')}</div></div>`; }).join('');
+  } else {
+    const f = faltantes().filter(x => x.uso > 0);
+    cuerpo = (f.length ? `<div class="grupo"><h2>Qué conviene conseguir primero <span>${f.length}</span></h2><div class="caja">${f.map(x =>
+        filaPrenda(x.p, nomCat(x.p.categoria) + '. ' + (x.abre ? 'Abre ' + plural(x.abre, 'outfit más', 'outfits más') : 'Aparece en ' + plural(x.uso, 'outfit', 'outfits')))).join('')}</div></div>`
+      : `<div class="vacio"><b>No te falta nada</b>Tienes todas las prendas de tu paleta.</div>`)
+      + (D.evitar.length ? `<div class="grupo"><h2>Al comprar, evita estos tonos cerca de la cara</h2><div class="caja paleta">${D.evitar.map(e => `<div class="no"><b style="${fill(e)}"></b>${esc(e.nombre)}</div>`).join('')}</div></div>` : '');
+  }
+  return cabeza('Inventario') + resumen + cuerpo;
+}
+function hojaPrenda(id){
+  const p = PID[id]; if (!p) return;
+  const cara = ['superior', 'capa', 'trabajo'].indexOf(p.categoria) >= 0, acc = p.categoria === 'accesorios';
+  const fams = []; D.prendas.forEach(x => { if (x.familia && fams.indexOf(x.familia) < 0) fams.push(x.familia); });
+  const color = (idc, idh, valor, etiqueta) => `<div class="campo"><span>${etiqueta}</span><div class="color-in">
+      <input type="color" id="${idc}" data-par="${idh}" value="${hexOk(valor) ? valor : '#888888'}" aria-label="Elegir ${etiqueta.toLowerCase()}">
+      <input type="text" id="${idh}" data-par="${idc}" value="${esc(valor || '')}" placeholder="#1F5560" maxlength="7" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Código HEX"></div></div>`;
+  abrirHoja(`<div class="cab"><button class="enlace" type="button" data-a="cerrar">Cancelar</button><h2>${esc(nomCat(p.categoria))}</h2><button class="enlace" type="button" data-a="guardar-prenda" data-id="${esc(id)}">Guardar</button></div>
+    <div class="grupo" style="margin-top:10px"><div class="caja">
+      <div class="fila sin-ico"><span class="t1">La tengo</span>${sw('f-sw', p.tengo, 'id="f-tengo"', 'La tengo')}</div>
+      <div class="fila sin-ico"><span><span class="t1">Disponible para outfits</span><span class="t2">Apágalo si está en la lavandería o prestada.</span></span>${sw('f-sw', p.disponible, 'id="f-disp"', 'Disponible para outfits')}</div>
+    </div></div>
+    <label class="campo"><span>Nombre</span><input type="text" id="f-nombre" value="${esc(p.nombre)}"></label>
+    ${color('f-color', 'f-hex', p.hex, acc ? 'Color del metal' : 'Color')}
+    ${acc ? color('f-color2', 'f-hex2', p.hex2, 'Color del armazón') : ''}
+    ${cara ? `<div class="campo"><span>Qué tanto te favorece (5 es color estrella)</span>${seg('f-nivel', [['', 'Sin'], ['1', '1'], ['2', '2'], ['3', '3'], ['4', '4'], ['5', '5']], String(p.nivel || ''))}</div>` : ''}
+    <label class="campo"><span>Familia de color</span><select id="f-familia"><option value="">Sin familia</option>${fams.map(f => `<option ${p.familia === f ? 'selected' : ''}>${esc(f)}</option>`).join('')}</select></label>
+    <label class="campo"><span>Nota</span><textarea id="f-nota">${esc(p.nota || '')}</textarea></label>`);
+}
+
+/* ---------- Perfil ---------- */
+function vPerfil(){
+  const grupos = [];
+  D.perfil.forEach(r => { const n = r.grupo || 'Otros'; let g = grupos.find(x => x.n === n); if (!g) grupos.push(g = { n, filas: [] }); g.filas.push(r); });
+  const heroe = `<div class="heroe"><button type="button" class="est" data-a="editar-perfil" data-k="estacion" style="text-align:left">${esc(pref.estacion || 'Mi análisis de color')}</button>
+    ${pref.resumen != null ? `<button type="button" data-a="editar-perfil" data-k="resumen" style="text-align:left;display:block"><p>${esc(pref.resumen)}</p></button>` : ''}</div>`;
+
+  /* Paleta: sale de las prendas de arriba, agrupadas por nivel */
+  const sup = FUENTE.superior || [];
+  const tira = (titulo, lista, no) => lista.length ? `<div class="grupo"><h2>${titulo} <span>${lista.length}</span></h2><div class="caja paleta">${lista.map(c => `<div class="${no ? 'no' : ''}" title="${esc(c.nota || c.motivo || '')}"><b style="${fill(c)}"></b>${esc(corto(c.nombre))}</div>`).join('')}</div></div>` : '';
+  const paleta = tira('Colores estrella', sup.filter(c => Number(c.nivel) === 5)) + tira('Muy buenos', sup.filter(c => Number(c.nivel) === 4))
+    + tira('Con moderación', sup.filter(c => Number(c.nivel) > 0 && Number(c.nivel) <= 3)) + tira('Evitar cerca de la cara', D.evitar, true);
+
+  const filaPerfil = r => {
+    const et = esc(r.etiqueta || r.clave);
+    if (r.tipo === 'si_no') return `<div class="fila sin-ico"><span class="t1">${et}</span>${sw('pref-sw', si(r.valor), `data-k="${esc(r.clave)}"`, r.etiqueta)}</div>`;
+    if (r.tipo === 'lista') { const ops = String(r.opciones || '').split('|').filter(Boolean); if (ops.indexOf(String(r.valor)) < 0) ops.unshift(String(r.valor));
+      return `<div class="fila sin-ico"><span class="t1">${et}</span><select data-c="perfil" data-k="${esc(r.clave)}" aria-label="${et}">${ops.map(v => `<option ${String(r.valor) === v ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></div>`; }
+    if (r.tipo === 'color') { const ops = sup.filter(c => Number(c.nivel) === 5 && hexOk(c.hex) && luz(c.hex) < 50);
+      return `<div class="fila sin-ico"><span class="t1">${et}</span><span class="colores">${ops.map(c => `<button type="button" data-a="color-app" data-v="${c.hex}" style="${fill(c)}" aria-pressed="${String(r.valor).toUpperCase() === c.hex.toUpperCase()}" aria-label="${esc(c.nombre)}"></button>`).join('')}</span></div>`; }
+    return `<button type="button" class="fila bloque" data-a="editar-perfil" data-k="${esc(r.clave)}" style="width:100%;text-align:left"><span class="t2" style="font-size:13px;color:var(--ink2);margin:0">${et}</span><span class="t2">${esc(r.valor === '' ? 'Sin dato' : r.valor)}</span></button>`;
+  };
+  const nom = id => PID[id] ? corto(PID[id].nombre).toLowerCase() : id;
+  const motor = () => {
+    const li = [];
+    Object.keys(R.cinturon).forEach(z => li.push(`<li><b>Zapato ${esc(nom(z))}</b>: cinturón ${esc(R.cinturon[z].map(nom).join(' o '))}</li>`));
+    Object.keys(R.acc).forEach(b => li.push(`<li><b>${b === '*' ? 'Cualquier otro cinturón' : 'Cinturón ' + esc(nom(b))}</b>: ${esc(R.acc[b].map(nom).join(' o '))}</li>`));
+    Object.keys(R.invisibles).forEach(z => li.push(`<li><b>Zapato ${esc(nom(z))}</b>: calcetines invisibles</li>`));
+    Object.keys(R.uniPant).forEach(u => li.push(`<li><b>Playera ${esc(nom(u))}</b>: pantalón ${esc(R.uniPant[u].map(nom).join(', '))}${R.uniCapa[u] ? '; capa ' + esc(R.uniCapa[u].map(nom).join(', ')) : ''}</li>`));
+    return `<details class="caja" style="margin-top:10px"><summary>Reglas que aplica el motor <span class="flecha">›</span></summary><ul>${li.join('')}<li>Se cambian en la hoja Reglas de tu Google Sheets.</li></ul></details>`;
+  };
+  const cuerpo = grupos.map(g => {
+    const filas = g.filas.filter(r => !(g.n === 'Análisis de color' && (r.clave === 'estacion' || r.clave === 'resumen')));
+    let extra = '';
+    if (g.n === 'Reglas de combinación') extra = motor();
+    if (g.n === 'Preferencias') extra = `<div class="grupo"><h2>Categorías que cuentan para el inventario</h2><div class="caja">${D.categorias.filter(c => FUENTE[c.clave]).map(c =>
+      `<div class="fila sin-ico"><span class="t1">${esc(c.nombre)}</span>${sw('cat-inv', c.usa_inventario !== false, `data-k="${esc(c.clave)}"`, c.nombre)}</div>`).join('')}</div></div>`;
+    return (filas.length ? `<div class="grupo"><h2>${esc(g.n)}</h2><div class="caja">${filas.map(filaPerfil).join('')}</div></div>` : '') + extra;
+  }).join('');
+
+  const cuando = D.cuando ? new Date(D.cuando).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'nunca';
+  const conexion = `<div class="grupo"><h2>Conexión con Google Sheets</h2><div class="caja">
+      <div class="fila sin-ico"><span class="t1">Última actualización</span><span class="valor">${esc(cuando)}</span></div>
+      <div class="fila sin-ico"><span class="t1">Cambios sin enviar</span><span class="valor" id="n-cola">${cola.length}</span></div>
+    </div>
+    ${avisos.length ? `<details class="caja" style="margin-top:10px" open><summary>${plural(avisos.length, 'aviso', 'avisos')} en tus datos <span class="flecha">›</span></summary><ul>${avisos.map(a => `<li>${esc(a)}</li>`).join('')}</ul></details>` : ''}
+    <div class="pila" style="margin-top:14px"><button class="btn acento" type="button" data-a="actualizar">Actualizar datos</button>
+    <button class="btn sec" type="button" data-a="cambiar-url">Cambiar URL del Apps Script</button></div></div>`;
+  return cabeza('Perfil') + heroe + paleta + cuerpo + conexion;
+}
+function hojaTexto(k){
+  const r = D.perfil.find(x => x.clave === k); if (!r) return;
+  abrirHoja(`<div class="cab"><button class="enlace" type="button" data-a="cerrar">Cancelar</button><h2>${esc(r.etiqueta || r.clave)}</h2><button class="enlace" type="button" data-a="guardar-texto" data-k="${esc(k)}">Guardar</button></div>
+    <label class="campo"><span>${esc(r.grupo || '')}</span><textarea id="f-texto">${esc(r.valor)}</textarea></label>`);
+}
+
+/* ---------- Hoja inferior, aviso y primera vez ---------- */
+function abrirHoja(html){
+  $('hoja-in').innerHTML = '<div class="asa"></div>' + html;
+  $('velo').hidden = false; $('hoja').hidden = false; $('hoja').scrollTop = 0; document.body.style.overflow = 'hidden';
+}
+function cerrarHoja(){ $('velo').hidden = true; $('hoja').hidden = true; document.body.style.overflow = ''; }
+let relojToast;
+function toast(msg, ms){ const t = $('toast'); t.textContent = msg; t.classList.add('ver'); clearTimeout(relojToast); relojToast = setTimeout(() => t.classList.remove('ver'), ms || 2600); }
+
+function mostrarApp(){ $('setup').hidden = true; $('app').hidden = false; render(); }
+function mostrarSetup(puedeCancelar){
+  cerrarHoja(); $('app').hidden = true; $('setup').hidden = false;
+  $('setup-url').value = API || ''; $('setup-err').textContent = ''; $('setup-cancel').hidden = !puedeCancelar; subir();
+}
+async function conectar(){
+  const url = $('setup-url').value.trim(), err = $('setup-err'), b = $('setup-ok');
+  if (!/^https?:\/\/\S+$/.test(url)) { err.textContent = 'Pega la URL completa. Empieza con https://script.google.com/'; return; }
+  if (/docs\.google\.com|\/edit(\?|#|$)/.test(url)) { err.textContent = 'Esa es la dirección de la hoja o del editor. Necesitas la URL de la aplicación web, la que termina en /exec.'; return; }
+  if (/\/dev(\?|$)/.test(url)) { err.textContent = 'La URL de prueba (/dev) solo funciona con tu sesión de Google. Usa la que termina en /exec.'; return; }
+  b.disabled = true; b.textContent = 'Conectando'; err.textContent = '';
+  try {
+    const d = await apiLeer(url, 'load');
+    if (!datosValidos(d)) throw new Error((d && d.error) || 'NO_JSON');
+    if (url !== API) { cola = []; ls.set(K.cola, cola); }
+    API = url; ls.set(K.url, API); usarDatos(d); preferenciasIniciales(); revalidar(); mostrarApp();
+  } catch (e) {
+    /* Si la implementación no es pública, Google responde con su página de inicio de sesión y el navegador la bloquea: se ve como falla de red. */
+    err.textContent = e.message === 'RED' ? 'No se pudo leer esa URL. Revisa tu conexión y que la implementación tenga acceso «Cualquier usuario».' : textoError(e);
+  }
+  finally { b.disabled = false; b.textContent = 'Conectar'; }
+}
+function preferenciasIniciales(){
+  modo = pref.modo_inicial === 'Trabajo' ? 'trabajo' : 'normal';
+  az.modo = modo; az.cambio = pref.trabajo_con_cambio == null ? true : si(pref.trabajo_con_cambio);
+  az.capa = ['Con capa', 'Sin capa'].indexOf(pref.azar_capa) >= 0 ? pref.azar_capa : 'Indistinto';
+  vista = null;
+}
+
+/* ============================================================
+   6. ACCIONES Y ARRANQUE
+   ============================================================ */
+const encender = (el, on) => el.setAttribute('aria-checked', String(!!on));
+const luego = fn => setTimeout(fn, 200);   // deja ver la animación del interruptor antes de redibujar
+
+const ACC = {
+  tab(el){ tab = el.dataset.v; render(); subir(); },
+  actualizar(){ actualizar(); },
+  cerrar(){ cerrarHoja(); },
+  seg(el){
+    const n = el.dataset.n, v = el.dataset.v;
+    if (n === 'modo') cambiarModo(v);
+    else if (n === 'azmodo') { az.modo = v; sortear(); render(); }
+    else if (n === 'inv') { invVista = v; render(); }
+    else if (n === 'f-nivel') el.parentNode.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === el)));
+  },
+  /* Armar */
+  ir(el){ ir(el.dataset.k); },
+  elegir(el){ elegir(vista, el.dataset.id); },
+  quitar(el){ delete sel[el.dataset.k]; orden = orden.filter(x => x !== el.dataset.k); render(); },
+  'sin-cambio'(){ sinCambio = true; delete sel.superior; orden = orden.filter(x => x !== 'superior'); const nx = siguiente('superior'); ir(nx === 'final' && !completo() ? primeraObligatoria() : nx); },
+  'agregar-cambio'(){ sinCambio = false; ir('superior'); },
+  completar(){
+    let pool = filtrar(sel);
+    if (modo === 'trabajo' && !sel.superior && !sinCambio && si(pref.trabajo_con_cambio)) { const c = COMBINADOS.filter(o => coincide(o, sel)); if (c.length) pool = c; }
+    if (!pool.length) return;
+    const o = elegirConPeso(pool, modo);
+    cats().forEach(c => { if (o[c.key] && sel[c.key] !== o[c.key]) { sel[c.key] = o[c.key]; orden = orden.filter(x => x !== c.key); orden.push(c.key); } });
+    if (modo === 'trabajo' && !sel.superior) sinCambio = true;
+    ir('final');
+  },
+  'poner-capa'(el){ sel.capa = el.dataset.id; orden = orden.filter(x => x !== 'capa'); orden.push('capa'); render(); },
+  atras(){ if (historial.length) { vista = historial.pop(); render(); subir(); } },
+  reiniciar(){ reiniciar(); },
+  favorito(){ alternarFav(modo, outfitDeSel()); render(); },
+  'paleta-completa'(){ ponerPref('solo_inventario', false); render(); },
+  /* Al azar */
+  'az-otro'(){ sortear(); render(); subir(); },
+  'az-playera'(el){ az.playera = el.dataset.id; sortear(); render(); },
+  'az-cambio'(el){ az.cambio = !az.cambio; encender(el, az.cambio); sortear(); luego(render); },
+  'az-fav'(){ if (az.actual) { alternarFav(az.modo, az.actual); render(); } },
+  'az-ajustar'(){ if (az.actual) abrirEnArmar(az.modo, az.actual); },
+  /* Favoritos */
+  'ver-fav'(el){ hojaFavorito(el.dataset.id); },
+  'guardar-fav'(el){
+    const f = D.favoritos.find(x => String(x.id) === el.dataset.id); if (!f) return;
+    const cambios = {}, nombre = $('f-nombre').value.trim(), nota = $('f-nota').value.trim();
+    if (nombre !== (f.nombre || '')) cambios.nombre = nombre;
+    if (nota !== (f.nota || '')) cambios.nota = nota;
+    if (Object.keys(cambios).length) { Object.assign(f, cambios); encolar({ action: 'favorito.update', id: f.id, cambios }); }
+    cerrarHoja(); render();
+  },
+  'fav-armar'(el){ const f = D.favoritos.find(x => String(x.id) === el.dataset.id); if (f) abrirEnArmar(modoDeFav(f), outfitDeFav(f)); },
+  'fav-borrar'(el){
+    const f = D.favoritos.find(x => String(x.id) === el.dataset.id); if (!f || !confirm('¿Quitar «' + (f.nombre || 'este outfit') + '» de favoritos?')) return;
+    D.favoritos = D.favoritos.filter(x => x !== f); encolar({ action: 'favorito.delete', id: f.id }); cerrarHoja(); render(); toast('Quitado de favoritos');
+  },
+  /* Inventario */
+  tengo(el){ const p = PID[el.dataset.id]; if (!p) return; cambiarPrenda(p, { tengo: !p.tengo }); encender(el, p.tengo); luego(render); },
+  editar(el){ hojaPrenda(el.dataset.id); },
+  'f-sw'(el){ encender(el, el.getAttribute('aria-checked') !== 'true'); },
+  'guardar-prenda'(el){
+    const p = PID[el.dataset.id]; if (!p) return;
+    const cambios = {}, pon = (campo, v) => { if (v !== (p[campo] == null ? '' : p[campo])) cambios[campo] = v; };
+    const hex = $('f-hex').value.trim().toUpperCase(), hex2 = $('f-hex2') ? $('f-hex2').value.trim().toUpperCase() : null;
+    if ((hex && !hexOk(hex)) || (hex2 && !hexOk(hex2))) { toast('El color va en formato HEX, por ejemplo #1F5560'); return; }
+    const nombre = $('f-nombre').value.trim(); if (!nombre) { toast('La prenda necesita un nombre'); return; }
+    pon('nombre', nombre); pon('hex', hex); if (hex2 !== null) pon('hex2', hex2);
+    pon('familia', $('f-familia').value); pon('nota', $('f-nota').value.trim());
+    pon('tengo', $('f-tengo').getAttribute('aria-checked') === 'true'); pon('disponible', $('f-disp').getAttribute('aria-checked') === 'true');
+    const niv = document.querySelector('#hoja [data-n="f-nivel"][aria-pressed="true"]');
+    if (niv) { const n = niv.dataset.v === '' ? '' : Number(niv.dataset.v); if (n !== (p.nivel === '' || p.nivel == null ? '' : Number(p.nivel))) cambios.nivel = n; }
+    if (Object.keys(cambios).length) cambiarPrenda(p, cambios);
+    cerrarHoja(); render();
+  },
+  /* Perfil */
+  'pref-sw'(el){ const k = el.dataset.k, v = !si(pref[k]); ponerPref(k, v); encender(el, v); luego(render); },
+  'cat-inv'(el){
+    const c = CAT[el.dataset.k]; if (!c) return;
+    c.usa_inventario = !c.usa_inventario; encolar({ action: 'categoria.update', clave: c.clave, cambios: { usa_inventario: c.usa_inventario } });
+    aplicarInventario(); az.listo = false; revalidar(); encender(el, c.usa_inventario);
+  },
+  'color-app'(el){ ponerPref('color_app', el.dataset.v); render(); },
+  'editar-perfil'(el){ hojaTexto(el.dataset.k); },
+  'guardar-texto'(el){ const v = $('f-texto').value.trim(); if (v !== String(pref[el.dataset.k])) ponerPref(el.dataset.k, v); cerrarHoja(); render(); },
+  'cambiar-url'(){ mostrarSetup(true); }
+};
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-tab]'); if (t) { tab = t.dataset.tab; render(); subir(); return; }
+  const el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
+  const fn = ACC[el.dataset.a]; if (fn) fn(el);
+});
+document.addEventListener('change', e => {
+  const el = e.target.closest('[data-c]'); if (!el) return;
+  if (el.dataset.c === 'perfil') { ponerPref(el.dataset.k, el.value); render(); }
+  if (el.dataset.c === 'az-capa') { az.capa = el.value; sortear(); render(); }
+});
+/* El selector de color y la caja de texto HEX se mantienen iguales */
+document.addEventListener('input', e => {
+  const el = e.target, par = el.dataset && el.dataset.par ? $(el.dataset.par) : null; if (!par) return;
+  if (el.type === 'color') par.value = el.value.toUpperCase(); else if (hexOk(el.value.trim())) par.value = el.value.trim().toLowerCase();
+});
+$('velo').addEventListener('click', cerrarHoja);
+$('setup-ok').addEventListener('click', conectar);
+$('setup-url').addEventListener('keydown', e => { if (e.key === 'Enter') conectar(); });
+$('setup-cancel').addEventListener('click', mostrarApp);
+/* Reintenta lo pendiente al recuperar señal o al volver a la app */
+window.addEventListener('online', vaciar);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) vaciar(); });
+
+/* Arranque: muestra la última copia guardada en el teléfono. Los datos nuevos de la hoja llegan con «Actualizar». */
+(function arrancar(){
+  if (!API) { mostrarSetup(false); return; }
+  const copia = ls.get(K.datos);
+  if (datosValidos(copia)) { D = copia; construir(); preferenciasIniciales(); revalidar(); mostrarApp(); vaciar(); return; }
+  $('setup').hidden = true; $('app').hidden = false;
+  $('pantalla').innerHTML = '<div class="vacio" style="margin-top:20vh"><b>Cargando tu clóset</b>Leyendo los datos de Google Sheets.</div>';
+  apiLeer(API, 'load').then(d => { if (!datosValidos(d)) throw new Error((d && d.error) || 'NO_JSON'); usarDatos(d); preferenciasIniciales(); revalidar(); render(); })
+    .catch(e => { mostrarSetup(false); $('setup-err').textContent = textoError(e); });
+})();
+</script>
+</body>
+</html>
