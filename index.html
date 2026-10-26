@@ -264,6 +264,26 @@ body.con-ctx .toast{bottom:calc(var(--tabs) + env(safe-area-inset-bottom,0px) + 
 .toast.ver{display:flex}
 .toast button{flex:none;min-height:32px;font-weight:700;text-decoration:underline;text-underline-offset:4px}
 
+/* Estilos de combinación */
+.bolitas{display:inline-flex;flex:none}
+.bolitas i{width:20px;height:20px;border-radius:50%;box-shadow:0 0 0 2px var(--surface),inset 0 0 0 1px var(--swline)}
+.bolitas i+i{margin-left:-6px}
+.bolitas.grandes i{width:32px;height:32px}
+.bolitas.grandes i+i{margin-left:-8px}
+.pasos-lista{list-style:none;margin-top:8px}
+.pasos-lista li{position:relative;padding:4px 0 4px 24px;color:var(--ink2)}
+.pasos-lista li::before{content:"";position:absolute;left:4px;top:13px;width:8px;height:8px;border-radius:50%;background:var(--ink3)}
+.estilo-card+.estilo-card{margin-top:16px}
+.fila[disabled]{opacity:.45}
+
+/* Computadora: más ancho y la hoja como ventana centrada */
+@media (min-width:900px){
+  .wrap,.ctx .in,.tabs .in{max-width:760px}
+  .favs{grid-template-columns:repeat(3,1fr)}
+  .hoja{max-width:640px;margin:0 auto;bottom:24px;max-height:86%;border-radius:16px}
+  .hoja .pie{padding-bottom:16px}
+}
+
 /* Primera vez */
 #setup{max-width:560px;margin:0 auto;padding:12vh 16px 48px}
 #setup .err{color:var(--ojo);margin-top:16px;min-height:24px}
@@ -514,7 +534,7 @@ function construir(){
   personal.forEach(o => (porBase[baseKey(o)] ||= []).push(o.superior));
   const combinados = trabajo.flatMap(t => (porBase[baseKey(t)] || []).map(s => Object.assign({}, t, { superior: s })));
 
-  TODOS = { personal, trabajo, combinados };
+  TODOS = { personal, trabajo, combinados }; memoEstilo = {};
   aplicarInventario(); aplicarColor();
 }
 
@@ -531,8 +551,8 @@ function aplicarInventario(){
 const poolDe = (m, o) => m === 'normal' ? PERSONAL : (o && o.superior ? COMBINADOS : TRABAJO);
 /* Para cambiar una sola parte: qué otras opciones caben y cuál es el outfit más parecido con cada una.
    «cambia» dice qué más tendría que moverse (por ejemplo, el cinturón al cambiar de zapatos). */
-function alternativas(m, o, k, fijas){
-  const pool = poolDe(m, o).filter(x => fijas.every(f => f === k || igual(x, o, f)));
+function alternativas(m, o, k, fijas, estilo){
+  const pool = porEstilo(poolDe(m, o), m, estilo).filter(x => fijas.every(f => f === k || igual(x, o, f)));
   const mejor = {};
   pool.forEach(x => {
     const c = x[k]; if (!c) return;
@@ -589,12 +609,12 @@ function elegirConPeso(lista, m){
   return lista[lista.length - 1];
 }
 /* Si el outfit va sin capa y queda por debajo de tu contraste, busca la capa compatible que más lo sube. */
-function sugerenciaCapa(m, o){
+function sugerenciaCapa(m, o, estilo){
   if (!o || o.capa !== SIN_CAPA) return null;
   const cat = m === 'trabajo' ? 'trabajo' : 'superior', base = contraste(o, cat);
   if (!base || base.i >= metaContraste()) return null;
   let mejor = null;
-  poolDe(m, o).forEach(x => {
+  porEstilo(poolDe(m, o), m, estilo).forEach(x => {
     if (x.capa === SIN_CAPA || !CAMPOS.every(k => k === 'capa' || igual(x, o, k))) return;
     const c = contraste(x, cat);
     if (c && c.i > base.i && (!mejor || c.d > mejor.c.d)) mejor = { capa: IDX.capa[x.capa], x, c };
@@ -620,6 +640,87 @@ function evaluarColor(hex){
   return { lista, parecido };
 }
 
+/* ------------------------------------------------------------
+   ESTILOS DE COMBINACIÓN (teoría del color)
+   Cada outfit se clasifica con los colores de sus piezas
+   grandes: arriba (o playera de trabajo), capa, pantalón y
+   zapatos. Se mide el tono (matiz) y la intensidad (croma) en
+   el espacio LCh, que se parece a como el ojo ve el color.
+   - Neutros: negro, blanco, grises, crudo, marino muy oscuro,
+     beige/arena/caqui/camel/cafés y la piel café del calzado.
+   - Con tono: todo lo demás.
+   ------------------------------------------------------------ */
+const ESTILOS = [
+  { id: 'neutra', nombre: 'Neutra', que: 'Solo colores neutros: negro, blanco, gris, marino, crudo, beige, camel y cafés.',
+    como: ['Combina claro con oscuro para no perder definición en la cara.', 'Juega con texturas (punto, mezclilla, piel) para que no se vea plano.', 'Es la base más fácil de combinar y la más formal.'], ej: ['#1F2A44', '#EDE6D6', '#4B2E1F'] },
+  { id: 'acento', nombre: 'Neutra con un acento', que: 'Todo neutro y un solo color protagonista.',
+    como: ['Pon el color cerca de la cara, de preferencia uno de tus colores estrella.', 'Regla 60-30-10: 60 % un neutro base, 30 % otro neutro y 10 % el color.', 'Repite el acento solo si es exactamente el mismo tono.'], ej: ['#C8B38A', '#556B2F', '#4B2E1F'] },
+  { id: 'mono', nombre: 'Monocromática', que: 'Un mismo color en varias claridades (tono sobre tono).',
+    como: ['Mezcla un tono claro, uno medio y uno oscuro del mismo color.', 'Cambia texturas para que las prendas no se fundan.', 'Alarga la figura: se ve limpio y elegante.'], ej: ['#2F4F3A', '#556B2F', '#8A9A5B'] },
+  { id: 'analoga', nombre: 'Análoga', que: 'Colores vecinos en el círculo cromático, como verde y azul petróleo, o terracota y mostaza.',
+    como: ['Deja que un color domine y el vecino acompañe.', 'Funciona mejor con colores de intensidad parecida.', 'Agrega un neutro (pantalón o calzado) para dar descanso.'], ej: ['#556B2F', '#2E6B5E', '#1F5560'] },
+  { id: 'complementaria', nombre: 'Complementaria', que: 'Colores opuestos en el círculo: azul con terracota o camel, verde con vino.',
+    como: ['Uno domina y el opuesto queda como acento.', 'En tu paleta úsalos profundos o apagados; nunca los dos brillantes.', 'Separa los dos colores con un neutro.'], ej: ['#1F5560', '#A0522D', '#C8B38A'] },
+  { id: 'triadica', nombre: 'Triádica', que: 'Tres colores repartidos en el círculo, como mostaza, vino y petróleo.',
+    como: ['Uno manda; los otros dos van en piezas más chicas.', 'Usa versiones apagadas para que no se vea disfrazado.', 'Complétala con calzado neutro.'], ej: ['#B8862B', '#6D1F2A', '#1F5560'] },
+  { id: 'bloques', nombre: 'Bloques de color', que: 'Dos o más colores sin relación cercana, en bloques lisos.',
+    como: ['Prendas lisas, sin estampados.', 'Cuida que los colores tengan intensidad parecida.', 'Es la más atrevida: mejor para días casuales.'], ej: ['#6D1F2A', '#2E6B5E', '#C8B38A'] }
+];
+const ESTILO = {}; ESTILOS.forEach(e => { ESTILO[e.id] = e; });
+function lch(hex){
+  const [L, a, b] = lab(hex); let h = Math.atan2(b, a) * 180 / Math.PI; if (h < 0) h += 360;
+  return { L, C: Math.hypot(a, b), h };
+}
+/* Tres grupos: 'puro' (negro, blanco, grises, crudo, marino, carbón),
+   'tierra' (beige, caqui, camel, cafés, piel de zapato) y 'color'. */
+function grupoColor(p, k){
+  const { L, C, h } = lch(p.hex), calido = h >= 35 && h <= 100;
+  if (C < 12) return 'puro';
+  if (L < 28 && C < 30) return 'puro';
+  if (calido && C < 34) return 'tierra';
+  if ((k === 'zapatos' || k === 'cinturon') && calido && C < 50) return 'tierra';
+  return 'color';
+}
+const difH = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
+/* El arco más corto del círculo que contiene todos los tonos */
+function arco(hs){
+  if (hs.length < 2) return 0;
+  const s = hs.slice().sort((a, b) => a - b); let hueco = 0;
+  s.forEach((h, i) => { const g = i === s.length - 1 ? s[0] + 360 - h : s[i + 1] - h; if (g > hueco) hueco = g; });
+  return 360 - hueco;
+}
+function esTriada(hs){
+  if (hs.length !== 3) return false;
+  const s = hs.slice().sort((a, b) => a - b);
+  return s.every((h, i) => { const g = i === 2 ? s[0] + 360 - h : s[i + 1] - h; return g >= 85 && g <= 155; });
+}
+let memoEstilo = {};
+function estiloDe(o, m){
+  if (!o) return '';
+  const key = m + '|' + clave(o); if (memoEstilo[key]) return memoEstilo[key];
+  const cara = m === 'trabajo' ? 'trabajo' : 'superior', piezas = [];
+  [cara, 'capa', 'pantalon', 'zapatos'].forEach(k => {
+    const p = o[k] && o[k] !== SIN_CAPA ? IDX[k][o[k]] : null;
+    if (p && hexOk(p.hex)) piezas.push({ k, c: lch(p.hex), g: grupoColor(p, k) });
+  });
+  /* Los tonos tierra son neutros si van solos, pero cuentan como color al lado de una prenda con color
+     (por ejemplo, petróleo con camel es complementaria; olivo con caqui, análoga). */
+  const color = piezas.filter(x => x.g === 'color'), tonales = piezas.filter(x => x.g !== 'puro');
+  const hs = tonales.map(x => x.c.h), arcoT = arco(hs);
+  let e;
+  if (!color.length) e = 'neutra';
+  else if (tonales.length >= 2 && arcoT <= 25) e = 'mono';
+  else if (tonales.length === 1) e = 'acento';
+  else if (arcoT <= 75) e = 'analoga';
+  else if (esTriada(hs)) e = 'triadica';
+  else if (hs.some((h, i) => hs.some((g, j) => j > i && difH(h, g) >= 140))) e = 'complementaria';
+  else if (color.length === 1) e = 'acento';
+  else e = 'bloques';
+  return (memoEstilo[key] = e);
+}
+const porEstilo = (lista, m, e) => e ? lista.filter(o => estiloDe(o, m) === e) : lista;
+function contarEstilos(lista, m){ const n = {}; lista.forEach(o => { const e = estiloDe(o, m); n[e] = (n[e] || 0) + 1; }); return n; }
+
 /* ============================================================
    4. ESTADO DE LA INTERFAZ
    ============================================================ */
@@ -635,12 +736,18 @@ let invVista = 'tengo', invBuscar = '';
 let favFiltro = 'todos', favOrden = 'recientes';
 let perfSel = null;         // color tocado en la paleta de Perfil
 let verOff = false;         // en Armar: mostrar también las opciones que no combinan
+/* Estilo de combinación elegido en Hoy y en Armar ('' = cualquiera). Se recuerda solo en este teléfono. */
+const K_ESTILO = 'micloset.estilos';
+let estiloHoy = '', estiloArmar = '';
+(function(){ const g = ls.get(K_ESTILO) || {}; estiloHoy = ESTILO[g.hoy] ? g.hoy : ''; estiloArmar = ESTILO[g.armar] ? g.armar : ''; })();
+const guardarEstilos = () => ls.set(K_ESTILO, { hoy: estiloHoy, armar: estiloArmar });
 function cats(){
   const base = D.categorias.filter(c => FUENTE[c.clave]).map(c => ({ key: c.clave, label: c.nombre, q: c.pregunta, n: [c.singular, c.plural] }));
   if (modo === 'normal') return base.filter(c => c.key !== 'trabajo');
   return base.map(c => c.key === 'superior' ? Object.assign({}, c, { label: 'Cambio', q: '¿A qué playera te cambias después?', n: ['playera de cambio', 'playeras de cambio'], opcional: true }) : c);
 }
-const conjunto = s => modo === 'normal' ? PERSONAL : (s.superior ? COMBINADOS : TRABAJO);
+const conjuntoBase = s => modo === 'normal' ? PERSONAL : (s.superior ? COMBINADOS : TRABAJO);
+const conjunto = s => porEstilo(conjuntoBase(s), modo, estiloArmar);
 const conjuntoTodo = s => modo === 'normal' ? TODOS.personal : (s.superior ? TODOS.combinados : TODOS.trabajo);
 const coincide = (o, s) => { for (const k in s) if (s[k] != null && o[k] !== s[k]) return false; return true; };
 const filtrar = s => conjunto(s).filter(o => coincide(o, s));
@@ -658,11 +765,12 @@ const nomCampo = (m, k) => k === 'superior' && m === 'trabajo' ? 'playera de cam
 function opciones(k){
   const otras = Object.assign({}, sel); delete otras[k];
   const esCambio = modo === 'trabajo' && k === 'superior';
-  const pool = esCambio ? COMBINADOS.filter(o => coincide(o, otras)) : filtrar(otras);
+  const libre = (esCambio ? COMBINADOS : conjuntoBase(otras)).filter(o => coincide(o, otras));
+  const pool = porEstilo(libre, modo, estiloArmar);
   const poolTodo = (esCambio ? TODOS.combinados : conjuntoTodo(otras)).filter(o => coincide(o, otras));
-  const cuenta = {}, cuentaTodo = {};
-  pool.forEach(o => { cuenta[o[k]] = 1; }); poolTodo.forEach(o => { cuentaTodo[o[k]] = 1; });
-  const motivo = c => !cuentaTodo[c.id] ? 'No combina' : !laTengo(k, c.id) ? (c.tengo ? 'No disponible' : 'No la tienes') : 'Falta con qué usarla';
+  const cuenta = {}, cuentaTodo = {}, cuentaLibre = {};
+  pool.forEach(o => { cuenta[o[k]] = 1; }); poolTodo.forEach(o => { cuentaTodo[o[k]] = 1; }); libre.forEach(o => { cuentaLibre[o[k]] = 1; });
+  const motivo = c => !cuentaTodo[c.id] ? 'No combina' : !laTengo(k, c.id) ? (c.tengo ? 'No disponible' : 'No la tienes') : cuentaLibre[c.id] ? 'Es de otro estilo' : 'Falta con qué usarla';
   const lista = FUENTE[k].map(c => ({ c, ok: !!cuenta[c.id], motivo: cuenta[c.id] ? '' : motivo(c) }));
   const prio = k === 'superior' ? (a, b) => ((Number(b.c.nivel) || 0) - (Number(a.c.nivel) || 0)) || (a.c.ord - b.c.ord) : (a, b) => a.c.ord - b.c.ord;
   lista.sort((a, b) => (b.ok - a.ok) || prio(a, b));
@@ -699,6 +807,7 @@ function revalidar(){
 function cambiarModo(m){
   if (m === modo) return;
   modo = m; if (m === 'normal') { delete sel.trabajo; sinCambio = false; }
+  if (estiloArmar && !porEstilo(m === 'normal' ? PERSONAL : TRABAJO.concat(COMBINADOS), m, estiloArmar).length) { estiloArmar = ''; guardarEstilos(); }
   vista = null; revalidar(); render(); subir();
 }
 function reiniciar(){ sel = {}; orden = []; sinCambio = false; historial = []; vista = cats()[0].key; render(); subir(); }
@@ -707,6 +816,7 @@ function ponerEnSel(o){
 }
 function abrirEnArmar(m, o){
   modo = m; sel = {}; orden = [];
+  if (estiloArmar && estiloDe(o, m) !== estiloArmar) { estiloArmar = ''; guardarEstilos(); }
   ponerEnSel(o);
   sinCambio = m === 'trabajo' && !o.superior; vista = 'final'; revalidar();
   tab = 'armar'; cerrarHoja(); render(); subir();
@@ -736,6 +846,10 @@ function sortear(){
   if (az.capa !== 'Indistinto') {
     const f = pool.filter(o => az.capa === 'Con capa' ? o.capa !== SIN_CAPA : o.capa === SIN_CAPA);
     if (f.length) pool = f; else if (pool.length) nota = 'No hay opción ' + az.capa.toLowerCase() + ' para esta selección; se muestra otra.';
+  }
+  if (estiloHoy) {
+    const f = porEstilo(pool, m, estiloHoy);
+    if (f.length) pool = f; else if (pool.length) nota = 'No hay outfits de estilo ' + ESTILO[estiloHoy].nombre.toLowerCase() + ' con estas opciones; se muestra otro.';
   }
   const ant = az.actual;
   if (ant && az.fijas.length) {
@@ -778,7 +892,7 @@ function alternarFav(m, o){
 
 /* Cambios que se guardan de inmediato */
 function cambiarPrenda(p, cambios){
-  Object.assign(p, cambios);
+  Object.assign(p, cambios); memoEstilo = {};
   encolar({ action: 'prenda.update', id: p.id, cambios: Object.assign({}, cambios) });
   aplicarInventario(); az.listo = false; revalidar();
 }
@@ -879,6 +993,8 @@ function lectura(m, o){
   else { una(o.superior ? 'Contraste en el trabajo' : 'Contraste', 'trabajo'); if (o.superior) una('Contraste después', 'superior'); }
   const cara = o.superior ? IDX.superior[o.superior] : o.trabajo ? IDX.trabajo[o.trabajo] : null, n = cara ? Number(cara.nivel) || 0 : 0;
   if (n) out.push(`<div class="lec"><span class="etq">Junto a la cara</span><span class="nm">${n === 5 ? '★ Color estrella' : n === 4 ? 'Muy buen color' : 'Con moderación'}</span></div>`);
+  const e = estiloDe(o, m);
+  if (ESTILO[e]) out.push(`<div class="lec"><span class="etq">Estilo</span><button type="button" class="link" style="min-height:32px" data-a="ver-estilo" data-v="${e}">${esc(ESTILO[e].nombre)}</button></div>`);
   return out.join('');
 }
 /* Una prenda del outfit. Con ctx ('hoy' o 'armar') la fila se toca para cambiarla o fijarla. */
@@ -919,15 +1035,60 @@ function hojaPieza(ctx, k){
     ${p.nota ? `<p class="txt2 mt1">${esc(p.nota)}</p>` : ''}
     ${ctx === 'hoy' ? `<div class="lista mt3"><div class="fila"><span class="tx"><span class="nm">Fijar esta prenda</span><span class="sub">Se queda cuando pides otro outfit.</span></span>${sw('fijar', fija, `data-k="${k}"`, 'Fijar esta prenda')}</div></div>` : ''}
     <h3 class="h3">Cambiar por</h3>
-    ${alts.length ? `<div class="lista">${alts.map(({ p: x, cambia }) => `<button type="button" class="fila" data-a="elegir-alt" data-ctx="${ctx}" data-k="${k}" data-id="${esc(x.id)}">
-        ${muestra(x)}<span class="tx"><span class="nm">${esc(x.nombre)}${estrella(x)}</span><span class="sub">${cambia.length ? 'También cambia: ' + cambia.map(f => nomCampo(m, f)).join(', ') : 'Solo cambia esta prenda'}</span></span>${FLECHA}</button>`).join('')}</div>`
+    ${alts.length ? `<div class="lista">${alts.map(({ p: x, x: otro, cambia }) => {
+        const e1 = estiloDe(o, m), e2 = estiloDe(otro, m), nota = e1 !== e2 && ESTILO[e2] ? ' · queda ' + ESTILO[e2].nombre.toLowerCase() : '';
+        return `<button type="button" class="fila" data-a="elegir-alt" data-ctx="${ctx}" data-k="${k}" data-id="${esc(x.id)}">
+        ${muestra(x)}<span class="tx"><span class="nm">${esc(x.nombre)}${estrella(x)}</span><span class="sub">${cambia.length ? 'También cambia: ' + cambia.map(f => nomCampo(m, f)).join(', ') : 'Solo cambia esta prenda'}${esc(nota)}</span></span>${FLECHA}</button>`; }).join('')}</div>`
       : `<p class="txt2">No hay otra opción que combine con el resto${fijas.length ? ' y con lo que fijaste' : ''}.</p>`}`);
 }
+
+/* ---------- Estilos de combinación ---------- */
+const bolitas = (hexes, grandes) => `<span class="bolitas ${grandes ? 'grandes' : ''}" aria-hidden="true">${hexes.map(h => `<i style="background:${h}"></i>`).join('')}</span>`;
+const nombreEstilo = id => ESTILO[id] ? ESTILO[id].nombre : 'Cualquier estilo';
+/* Outfits sobre los que se elige el estilo (sin contar el propio filtro de estilo) */
+function baseEstilos(ctx){
+  if (ctx === 'armar') return { m: modo, lista: modo === 'normal' ? PERSONAL : TRABAJO.concat(COMBINADOS) };
+  const m = az.modo; let l = m === 'normal' ? PERSONAL : (az.cambio ? COMBINADOS : TRABAJO);
+  if (m === 'trabajo' && az.playera) l = l.filter(o => o.trabajo === az.playera);
+  return { m, lista: l };
+}
+/* Hoja para elegir el estilo (en Hoy o en Armar) */
+function hojaEstilos(ctx){
+  const { m, lista } = baseEstilos(ctx), n = contarEstilos(lista, m), actual = ctx === 'hoy' ? estiloHoy : estiloArmar;
+  abrirHoja('Estilo de combinación', `<p class="txt2">${ctx === 'hoy' ? 'El outfit de hoy saldrá de este estilo.' : 'Solo verás las prendas que sirven para este estilo.'}</p>
+    <div class="lista mt2">
+      <button type="button" class="fila ${!actual ? 'actual' : ''}" data-a="elegir-estilo" data-ctx="${ctx}" data-v=""><span class="tx"><span class="nm">Cualquier estilo</span><span class="sub">${plural(lista.length, 'outfit', 'outfits')}</span></span><span class="fin">${!actual ? '✓' : ''}</span></button>
+      ${ESTILOS.map(e => { const c = n[e.id] || 0;
+        return `<button type="button" class="fila ${actual === e.id ? 'actual' : ''}" data-a="elegir-estilo" data-ctx="${ctx}" data-v="${e.id}" ${c ? '' : 'disabled'}>${bolitas(e.ej)}
+          <span class="tx"><span class="nm">${esc(e.nombre)}</span><span class="sub">${c ? plural(c, 'outfit', 'outfits') + ' · ' + esc(e.que) : 'Con tus prendas aún no sale ninguno'}</span></span><span class="fin">${actual === e.id ? '✓' : ''}</span></button>`; }).join('')}
+    </div>
+    <div class="acciones mt2"><button type="button" class="link" data-a="guia-estilos">¿Cómo funciona cada estilo?</button></div>`);
+}
+/* Explicación de un estilo: qué es, cómo aplicarlo, ejemplo y cuántos outfits tienes */
+function htmlEstilo(e, conBoton){
+  const nN = (contarEstilos(PERSONAL, 'normal')[e.id] || 0), nT = (contarEstilos(TRABAJO.concat(COMBINADOS), 'trabajo')[e.id] || 0);
+  return `<div class="card estilo-card"><div class="fila" style="padding:0">${bolitas(e.ej, true)}<span class="tx"><span class="nm" style="font-size:var(--f2)">${esc(e.nombre)}</span></span></div>
+    <p class="txt2 mt2">${esc(e.que)}</p>
+    <p class="etq mt2">Cómo aplicarla</p><ul class="pasos-lista">${e.como.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+    <p class="nota mt2">${nN || nT ? `Con tus prendas: ${plural(nN, 'outfit normal', 'outfits normales')} y ${plural(nT, 'de trabajo', 'de trabajo')}.` : 'Con tus prendas y combinaciones aún no sale ninguno.'}</p>
+    ${conBoton ? `<div class="pila" style="margin-top:16px"><button class="btn sec" type="button" data-a="probar-estilo" data-v="${e.id}" ${nN || nT ? '' : 'disabled'}>Ver uno en Hoy</button></div>` : ''}</div>`;
+}
+function hojaEstilo(id){
+  const e = ESTILO[id]; if (!e) return;
+  abrirHoja(e.nombre, htmlEstilo(e, true) + `<div class="acciones mt2"><button type="button" class="link" data-a="guia-estilos">Ver todos los estilos</button></div>`);
+}
+const CLAVES_COLOR = [
+  ['Regla 60-30-10', 'Un color domina (60 %), otro acompaña (30 %) y un tercero es el acento (10 %).'],
+  ['Claro con oscuro', 'Tu contraste personal es la guía: el medidor de cada outfit te dice si estás cerca.'],
+  ['Repite un tono', 'Haz que un color aparezca dos veces (capa y zapato, por ejemplo) para unir el look.'],
+  ['Texturas', 'En looks neutros o monocromáticos, mezcla punto, mezclilla, piel y algodón para dar profundidad.'],
+  ['El color va arriba', 'Tus colores estrella cerca de la cara; los neutros abajo y en el calzado.']
+];
 
 /* ---------- Hoy: un outfit y una acción principal ---------- */
 function saludo(){ const h = new Date().getHours(); return h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches'; }
 function resumenOpcionesHoy(){
-  const f = [az.capa === 'Indistinto' ? 'Capa: da igual' : az.capa];
+  const f = [nombreEstilo(estiloHoy), az.capa === 'Indistinto' ? 'capa: da igual' : az.capa.toLowerCase()];
   if (az.modo === 'trabajo') {
     f.push(az.playera && IDX.trabajo[az.playera] ? 'Playera ' + corto(IDX.trabajo[az.playera].nombre).toLowerCase() : 'Cualquier playera');
     f.push(az.cambio ? 'con cambio' : 'sin cambio');
@@ -952,7 +1113,9 @@ function vHoy(){
 function hojaOpcionesHoy(){
   const m = az.modo;
   abrirHoja('Opciones de hoy', `
-    <h3 class="h3" style="margin-top:8px">Capa</h3>${seg('azcapa', [['Indistinto', 'Da igual'], ['Con capa', 'Con capa'], ['Sin capa', 'Sin capa']], az.capa, 'Capa')}
+    <h3 class="h3" style="margin-top:8px">Estilo de combinación</h3>
+    <div class="lista"><button type="button" class="fila" data-a="estilos" data-ctx="hoy">${ESTILO[estiloHoy] ? bolitas(ESTILO[estiloHoy].ej) : ''}<span class="tx"><span class="nm">${esc(nombreEstilo(estiloHoy))}</span><span class="sub">${ESTILO[estiloHoy] ? esc(ESTILO[estiloHoy].que) : 'Monocromática, análoga, complementaria, neutra…'}</span></span>${FLECHA}</button></div>
+    <h3 class="h3">Capa</h3>${seg('azcapa', [['Indistinto', 'Da igual'], ['Con capa', 'Con capa'], ['Sin capa', 'Sin capa']], az.capa, 'Capa')}
     ${m === 'trabajo' ? `<h3 class="h3">Playera de trabajo</h3><div class="lista">
       ${[{ id: '', nombre: 'Cualquier playera' }].concat(FUENTE.trabajo.filter(u => hay('trabajo', u.id))).map(u => `<button type="button" class="fila ${az.playera === u.id ? 'actual' : ''}" data-a="az-playera" data-id="${esc(u.id)}" aria-pressed="${az.playera === u.id}">
         ${u.id ? muestra(u) : ''}<span class="tx"><span class="nm">${esc(u.nombre)}</span></span><span class="fin">${az.playera === u.id ? '✓' : ''}</span></button>`).join('')}</div>
@@ -970,7 +1133,8 @@ function vArmar(){
   const cs = cats();
   if (vista === 'final' && !completo()) vista = primeraObligatoria();
   if (vista !== 'final' && !cs.some(c => c.key === vista)) vista = cs[0].key;
-  const top = cabeza('Armar') + seg('modo', [['normal', 'Normal'], ['trabajo', 'Trabajo']], modo, 'Tipo de outfit');
+  const top = cabeza('Armar') + seg('modo', [['normal', 'Normal'], ['trabajo', 'Trabajo']], modo, 'Tipo de outfit')
+    + `<div class="linea"><span class="txt2">${ESTILO[estiloArmar] ? 'Estilo: ' + esc(nombreEstilo(estiloArmar).toLowerCase()) : 'Cualquier estilo'}</span><button type="button" class="link" data-a="estilos" data-ctx="armar">${estiloArmar ? 'Cambiar' : 'Elegir estilo'}</button></div>`;
   if (sinOutfits()) return top + vBloqueo();
   const i = cs.findIndex(c => c.key === vista), actual = cs[i];
   const paso = vista === 'final' ? `Listo · ${cs.length} de ${cs.length}` : `Paso ${i + 1} de ${cs.length} · ${actual.label}`;
@@ -1056,7 +1220,7 @@ function vFavoritos(){
     + `<div class="linea"><span class="txt2">${favOrden === 'usados' ? 'Más usados primero' : 'Más recientes primero'}</span><button type="button" class="link" data-a="fav-orden">${favOrden === 'usados' ? 'Ver recientes' : 'Ver más usados'}</button></div>`
     + (fs.length ? `<div class="favs">${fs.map(f => {
       const m = modoDeFav(f), o = outfitDeFav(f), falta = faltaDe(o), u = usos(f);
-      const meta = falta ? 'Falta ' + esc(falta) : (u ? 'Usado ' + plural(u, 'vez', 'veces') : 'Sin usar') + (m === 'trabajo' ? ' · Trabajo' : '');
+      const e = estiloDe(o, m), meta = falta ? 'Falta ' + esc(falta) : (u ? 'Usado ' + plural(u, 'vez', 'veces') : 'Sin usar') + (m === 'trabajo' ? ' · Trabajo' : '') + (ESTILO[e] ? ' · ' + esc(ESTILO[e].nombre) : '');
       return `<button type="button" class="fav" data-a="ver-fav" data-id="${esc(f.id)}"><div class="lam ${m === 'trabajo' && o.superior ? 'dos' : ''}">${laminas(m, o)}</div>
         <span class="nm">${esc(f.nombre || 'Sin nombre')}</span><span class="sub ${falta ? 'ojo' : ''}">${meta}</span></button>`;
     }).join('')}</div>` : `<div class="vacio"><p class="h2">Nada en este filtro</p>No tienes favoritos de este tipo.</div>`);
@@ -1179,6 +1343,7 @@ function vPerfil(){
       <div class="acciones mt1"><button type="button" class="link" data-a="editar-perfil" data-k="estacion">Editar estación</button>${pref.resumen != null ? `<button type="button" class="link" data-a="editar-perfil" data-k="resumen">Editar resumen</button>` : ''}</div></section>
     <div class="lista mt3">
       ${fila('perf-sub', 'paleta', 'Mi paleta', plural(sup.length, 'color', 'colores') + ' · toca uno para ver su detalle')}
+      ${fila('perf-sub', 'estilos', 'Estilos de combinación', 'Monocromática, análoga, complementaria y más')}
       ${fila('probador', '', 'Probador de color', 'Compara un color con tu paleta')}
     </div>
     <div class="lista mt3">${gruposPerfil().map(g => fila('perf-sub', g.n, g.n, '')).join('')}
@@ -1207,6 +1372,13 @@ function subPerfil(){
       + tira('Colores estrella', k(est)) + tira('Muy buenos', k(sup.filter(c => Number(c.nivel) === 4)))
       + tira('Con moderación', k(sup.filter(c => Number(c.nivel) > 0 && Number(c.nivel) <= 3)))
       + tira('Evitar cerca de la cara', D.evitar.map((c, i) => ({ c, key: 'e:' + i })), true);
+  }
+  if (perfSub === 'estilos') {
+    return cabeza('Estilos de combinación', 'Cada outfit se clasifica solo, según sus colores', atras)
+      + `<p class="txt2">La app mide el tono y la intensidad de la prenda de arriba, la capa, el pantalón y los zapatos, y reconoce el estilo. Elige uno en Hoy (Opciones) o en Armar para ver solo outfits de ese tipo.</p>
+      <div class="mt3">${ESTILOS.map(e => htmlEstilo(e, true)).join('')}</div>
+      <h3 class="h3">Claves que sirven con cualquier estilo</h3>
+      <div class="lista">${CLAVES_COLOR.map(([t, d]) => `<div class="fila"><span class="tx"><span class="nm">${esc(t)}</span><span class="sub">${esc(d)}</span></span></div>`).join('')}</div>`;
   }
   if (perfSub === 'conexion') {
     const cuando = D.cuando ? new Date(D.cuando).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'nunca';
@@ -1412,7 +1584,7 @@ const ACC = {
   'agregar-cambio'(){ sinCambio = false; ir('superior'); },
   completar(){
     let pool = filtrar(sel);
-    if (modo === 'trabajo' && !sel.superior && !sinCambio && si(pref.trabajo_con_cambio)) { const c = COMBINADOS.filter(o => coincide(o, sel)); if (c.length) pool = c; }
+    if (modo === 'trabajo' && !sel.superior && !sinCambio && si(pref.trabajo_con_cambio)) { const c = porEstilo(COMBINADOS.filter(o => coincide(o, sel)), modo, estiloArmar); if (c.length) pool = c; }
     if (!pool.length) return;
     ponerEnSel(elegirConPeso(pool, modo));
     if (modo === 'trabajo' && !sel.superior) sinCambio = true;
@@ -1429,13 +1601,29 @@ const ACC = {
   reiniciar(){ reiniciar(); },
   favorito(){ alternarFav(modo, outfitDeSel()); render(); },
   'paleta-completa'(){ ponerPref('solo_inventario', false); render(); },
+  /* Estilos de combinación */
+  estilos(el){ hojaEstilos(el.dataset.ctx); },
+  'elegir-estilo'(el){
+    const v = ESTILO[el.dataset.v] ? el.dataset.v : '';
+    if (el.dataset.ctx === 'hoy') { estiloHoy = v; guardarEstilos(); sortear(); az.listo = true; }
+    else { estiloArmar = v; guardarEstilos(); revalidar(); }
+    cerrarHoja(); render(); subir(); toast('✓ ' + nombreEstilo(v));
+  },
+  'ver-estilo'(el){ hojaEstilo(el.dataset.v); },
+  'guia-estilos'(){ cerrarHoja(); tab = 'perfil'; perfSub = 'estilos'; invSub = null; render(); subir(); },
+  'probar-estilo'(el){
+    const v = el.dataset.v; if (!ESTILO[v]) return;
+    estiloHoy = v; guardarEstilos();
+    if (!porEstilo(PERSONAL, 'normal', v).length) az.modo = 'trabajo'; else if (!porEstilo(TRABAJO.concat(COMBINADOS), 'trabajo', v).length) az.modo = 'normal';
+    az.fijas = []; az.playera = ''; sortear(); az.listo = true; cerrarHoja(); irA('hoy');
+  },
   /* Una prenda del outfit (Hoy y Armar) */
   pieza(el){ hojaPieza(el.dataset.ctx, el.dataset.k); },
   'elegir-alt'(el){
     const ctx = el.dataset.ctx, k = el.dataset.k, { m, o } = contextoOutfit(ctx); if (!o) return;
     const a = alternativas(m, o, k, ctx === 'hoy' ? fijasHoy(k) : []).find(x => x.p.id === el.dataset.id); if (!a) return;
     if (ctx === 'hoy') { az.actual = a.x; if (k === 'trabajo' && az.playera) az.playera = a.x.trabajo; az.recientes.push(claveVisual(a.x)); if (az.recientes.length > 12) az.recientes.shift(); }
-    else ponerEnSel(a.x);
+    else { if (estiloArmar && estiloDe(a.x, m) !== estiloArmar) { estiloArmar = ''; guardarEstilos(); } ponerEnSel(a.x); }
     cerrarHoja(); marcada = k; render();
   },
   fijar(el){ const k = el.dataset.k, i = az.fijas.indexOf(k); if (i >= 0) az.fijas.splice(i, 1); else az.fijas.push(k); encender(el, i < 0); render(); },
