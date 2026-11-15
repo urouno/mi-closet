@@ -276,12 +276,64 @@ body.con-ctx .toast{bottom:calc(var(--tabs) + env(safe-area-inset-bottom,0px) + 
 .estilo-card+.estilo-card{margin-top:16px}
 .fila[disabled]{opacity:.45}
 
-/* Computadora: más ancho y la hoja como ventana centrada */
+/* Indicadores: cuántos outfits da una prenda y etiquetas cortas (tipo de combinación, disponibles) */
+.cuenta{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:52px;line-height:1.2;text-align:center;color:var(--ink)}
+.cuenta b{font-size:var(--f3);font-weight:700}
+.cuenta small{font-size:var(--f4);color:var(--ink2)}
+.cuenta.cero,.cuenta.cero small{color:var(--ink3)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;min-height:32px;padding:0 12px;border-radius:16px;background:var(--fill);font-size:var(--f4);font-weight:600;color:var(--ink);white-space:nowrap}
+.chip .bolitas i{width:14px;height:14px;box-shadow:0 0 0 2px var(--fill),inset 0 0 0 1px var(--swline)}
+.chip .bolitas i+i{margin-left:-4px}
+button.chip{box-shadow:inset 0 0 0 1px var(--line)}
+.lec .chip{margin-top:4px}
+.hoja:focus{outline:none}
+
+/* Con ratón: las cosas que se pueden tocar responden al pasar el cursor */
+@media (hover:hover){
+  button.fila:not([disabled]):hover,.fila .abre:hover,.fav:hover,.cuadro:hover,.cerrar:hover,.estado:hover{background:var(--fill)}
+  .cerrar:hover{box-shadow:inset 0 0 0 1px var(--line)}
+  .btn:hover{filter:brightness(.94)}
+  .link:hover{text-decoration-thickness:2px}
+  .tabs button:hover,.seg button:hover,.atras:hover{color:var(--ink)}
+  .opt:not(.off):not(.sel):hover .swg{outline:2px solid var(--ink3);outline-offset:3px}
+  .pal:hover{color:var(--ink)}
+  button.chip:hover{box-shadow:inset 0 0 0 1px var(--ink3)}
+}
+
+/* Pantalla mediana: más ancho y la hoja como ventana centrada */
 @media (min-width:900px){
+  html{scrollbar-gutter:stable}
   .wrap,.ctx .in,.tabs .in{max-width:760px}
   .favs{grid-template-columns:repeat(3,1fr)}
-  .hoja{max-width:640px;margin:0 auto;bottom:24px;max-height:86%;border-radius:16px}
+  .hoja{max-width:640px;inset:0;margin:auto;height:fit-content;max-height:86vh;border-radius:16px}
   .hoja .pie{padding-bottom:16px}
+  .asa{display:none}
+  .hoja .tope{padding-top:16px}
+  .fila select{max-width:320px}
+}
+
+/* Computadora: menú a la izquierda, contenido amplio y el outfit en dos columnas */
+@media (min-width:1000px){
+  :root{--lado:232px}
+  #app{padding-left:var(--lado)}
+  .tabs{top:0;right:auto;width:var(--lado);border-top:0;border-right:1px solid var(--line);padding:24px 16px}
+  .tabs::before{content:"Mi clóset";display:block;padding:0 16px 24px;font-size:var(--f2);font-weight:700}
+  .tabs .in{display:flex;flex-direction:column;gap:4px;height:auto;max-width:none}
+  .tabs button{flex-direction:row;justify-content:flex-start;gap:16px;min-height:48px;padding:0 16px;border-radius:12px;font-size:var(--f3);text-align:left}
+  .tabs button[aria-current="page"]{background:var(--fill)}
+  .wrap{max-width:880px;padding:0 32px 48px}
+  body.con-ctx .wrap{padding-bottom:136px}
+  .top{padding-top:32px}
+  .ctx{left:var(--lado);bottom:0;padding:8px 32px}
+  .ctx .in{max-width:816px}
+  .toast{left:calc(var(--lado) + 16px);bottom:24px}
+  body.con-ctx .toast{bottom:96px}
+  .favs{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+  #pantalla .outfit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:32px;align-items:start}
+  #pantalla .outfit .lista.plana{margin:0;border:1px solid var(--line);border-radius:12px}
+  .paso{top:0}
 }
 
 /* Primera vez */
@@ -326,7 +378,7 @@ body.con-ctx .toast{bottom:calc(var(--tabs) + env(safe-area-inset-bottom,0px) + 
 </div>
 
 <div class="velo" id="velo" hidden></div>
-<div class="hoja" id="hoja" role="dialog" aria-modal="true" aria-labelledby="hoja-titulo" hidden><div class="in" id="hoja-in"></div></div>
+<div class="hoja" id="hoja" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="hoja-titulo" hidden><div class="in" id="hoja-in"></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 'use strict';
@@ -362,7 +414,8 @@ const STAR = '<span class="star" aria-label="color estrella">★</span>';
 
 let API = ls.get(K.url);          // URL de implementación del Apps Script (se pide una sola vez)
 let D = null;                     // última copia de los datos de Google Sheets
-let cola = ls.get(K.cola) || [];  // cambios hechos en la app que aún no llegan a Google Sheets
+let cola = ls.get(K.cola);        // cambios hechos en la app que aún no llegan a Google Sheets
+if (!Array.isArray(cola)) cola = [];
 let enVuelo = 0, enviando = false, cargando = false;
 let guardadoHasta = 0;            // hasta cuándo se muestra «✓ Guardado» arriba
 
@@ -386,7 +439,8 @@ const apiEscribir = cuerpo => pedir(API, { method: 'POST', headers: { 'Content-T
 const ERRORES = {
   NO_JSON: 'La URL respondió, pero no como la API de Mi clóset. Revisa que termine en /exec y que el acceso sea «Cualquier usuario».',
   RED: 'No se pudo conectar. Revisa tu conexión a internet.',
-  TIEMPO: 'Google tardó demasiado en responder. Intenta de nuevo.'
+  TIEMPO: 'Google tardó demasiado en responder. Intenta de nuevo.',
+  DATOS: 'Los datos de tu hoja llegaron incompletos y no se pudieron leer. Se conservó la copia anterior.'
 };
 const textoError = e => (navigator.onLine === false && e && (e.message === 'RED' || e.message === 'TIEMPO'))
   ? 'Sin conexión. Puedes seguir usando la app; tus cambios se envían cuando vuelva la señal.'
@@ -394,9 +448,14 @@ const textoError = e => (navigator.onLine === false && e && (e.message === 'RED'
 const datosValidos = d => !!d && d.ok === true && ['categorias', 'prendas', 'combinaciones', 'reglas', 'perfil'].every(k => Array.isArray(d[k]));
 const guardar = () => ls.set(K.datos, D);
 
+const normalizar = d => { if (!Array.isArray(d.evitar)) d.evitar = []; if (!Array.isArray(d.favoritos)) d.favoritos = []; return d; };
+/* Si los datos nuevos vienen dañados, la app se queda con los que ya tenía en vez de quedar en blanco */
 function usarDatos(d){
-  d.evitar = d.evitar || []; d.favoritos = d.favoritos || []; d.cuando = Date.now();
-  D = d; guardar(); construir(); sincronizarAzar(); az.listo = false; revalidar();
+  normalizar(d); d.cuando = Date.now();
+  const antes = D; D = d;
+  try { construir(); }
+  catch (e) { console.error(e); D = antes; if (antes) { try { construir(); } catch (e2) {} } throw new Error('DATOS'); }
+  guardar(); sincronizarAzar(); az.listo = false; revalidar();
 }
 
 /* Cada cambio se aplica al instante en pantalla y se manda a Google Sheets.
@@ -546,6 +605,28 @@ const estricto = o => CAMPOS.every(k => laTengo(k, o[k]));
 function aplicarInventario(){
   const ok = o => CAMPOS.every(k => hay(k, o[k]));
   PERSONAL = TODOS.personal.filter(ok); TRABAJO = TODOS.trabajo.filter(ok); COMBINADOS = TODOS.combinados.filter(ok);
+  memoCuenta = null;
+}
+/* Por prenda: en cuántos outfits completos va hoy («hace»), cuántos más saldrían si la tuvieras
+   disponible («abre») y en cuántos aparece en total («uso»). Se recalcula al cambiar el inventario. */
+let memoCuenta = null;
+function cuentas(){
+  if (memoCuenta) return memoCuenta;
+  const hace = {}, abre = {}, uso = {};
+  for (const o of TODOS.personal.concat(TODOS.trabajo)) {
+    const ids = [], falta = [];
+    for (const k of CAMPOS) { const id = o[k]; if (!id || id === SIN_CAPA) continue; ids.push(id); uso[id] = (uso[id] || 0) + 1; if (!laTengo(k, id)) falta.push(id); }
+    if (!falta.length) ids.forEach(id => { hace[id] = (hace[id] || 0) + 1; });
+    else if (falta.length === 1) abre[falta[0]] = (abre[falta[0]] || 0) + 1;
+  }
+  return (memoCuenta = { hace, abre, uso });
+}
+/* Los tipos de combinación que salen hoy con una prenda, con cuántos outfits cada uno */
+function tiposDePrenda(p){
+  const n = {}, k = p.categoria;
+  const sumar = (lista, m) => lista.forEach(o => { if (o[k] === p.id && estricto(o)) { const e = estiloDe(o, m); n[e] = (n[e] || 0) + 1; } });
+  sumar(TODOS.personal, 'normal'); sumar(TODOS.trabajo, 'trabajo');
+  return ESTILOS.filter(e => n[e.id]).map(e => ({ e, n: n[e.id] }));
 }
 /* El conjunto de outfits del que sale un outfit dado */
 const poolDe = (m, o) => m === 'normal' ? PERSONAL : (o && o.superior ? COMBINADOS : TRABAJO);
@@ -871,6 +952,7 @@ const favDe = (m, o) => D.favoritos.find(f => modoDeFav(f) === m && clave(outfit
 function hoy(){ const d = new Date(), p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
 function nombreAuto(m, o){
   const arriba = m === 'trabajo' ? IDX.trabajo[o.trabajo] : IDX.superior[o.superior], pa = IDX.pantalon[o.pantalon];
+  if (!arriba || !pa) return m === 'trabajo' ? 'Outfit de trabajo' : 'Outfit';
   return (m === 'trabajo' ? 'Trabajo ' + corto(arriba.nombre).toLowerCase() : corto(arriba.nombre)) + ' con ' + corto(pa.nombre).toLowerCase();
 }
 /* Quitar un favorito no pide confirmación: se quita y el aviso ofrece Deshacer durante unos segundos */
@@ -907,12 +989,7 @@ function ponerPref(k, valor){
 }
 /* Qué conviene conseguir: cuántos outfits completos abre cada prenda que falta */
 function faltantes(){
-  const uso = {}, abre = {};
-  for (const o of TODOS.personal.concat(TODOS.trabajo)) {
-    const falta = [];
-    for (const k of CAMPOS) { const id = o[k]; if (!id || id === SIN_CAPA) continue; uso[id] = (uso[id] || 0) + 1; if (!laTengo(k, id)) falta.push(id); }
-    if (falta.length === 1) abre[falta[0]] = (abre[falta[0]] || 0) + 1;
-  }
+  const { uso, abre } = cuentas();
   return D.prendas.filter(p => PID[p.id] === p && !p.tengo && controla(p.categoria))
     .map(p => ({ p, uso: uso[p.id] || 0, abre: abre[p.id] || 0 }))
     .sort((a, b) => (b.abre - a.abre) || (b.uso - a.uso) || (a.p.ord - b.p.ord));
@@ -954,8 +1031,18 @@ function pintarSync(){
   const n = $('n-cola'); if (n) n.textContent = cola.length;
 }
 
+/* Si una pantalla falla al dibujarse (por un dato raro de la hoja), se avisa en vez de dejar la app en blanco */
 function render(){
   if (!D) return;
+  try { pintar(); }
+  catch (e) {
+    console.error(e);
+    $('pantalla').innerHTML = `<div class="vacio" style="margin-top:20vh"><p class="h2">No se pudo mostrar esta pantalla</p>Puede que un dato de tu hoja esté incompleto. Actualiza los datos o entra a otra sección.
+      <button class="btn prim" type="button" data-a="actualizar">Actualizar datos</button></div>`;
+    $('ctx').hidden = true; document.body.classList.remove('con-ctx');
+  }
+}
+function pintar(){
   document.querySelectorAll('#tabs button').forEach(b => b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   $('pantalla').innerHTML = ({ hoy: vHoy, armar: vArmar, favoritos: vFavoritos, inventario: vInventario, perfil: vPerfil })[tab]();
   const barra = tab === 'armar' ? ctxArmar() : tab === 'hoy' ? ctxHoy() : '';
@@ -983,7 +1070,8 @@ function figura(top, capa, b, pa, z, a, invisibles){
 }
 /* Lectura en palabras simples: cómo queda el contraste y qué color va junto a la cara */
 function lectura(m, o){
-  const meta = metaContraste(), out = [];
+  const meta = metaContraste(), out = [], e = estiloDe(o, m);
+  if (ESTILO[e]) out.push(`<div class="lec"><span class="etq">Tipo de combinación</span><button type="button" class="chip" data-a="ver-estilo" data-v="${e}">${bolitas(ESTILO[e].ej)}${esc(ESTILO[e].nombre)}</button></div>`);
   const una = (titulo, cat) => {
     const c = contraste(o, cat); if (!c) return;
     const frase = c.dist === 0 ? 'igual al tuyo' : c.dist === 1 ? 'cerca del tuyo' : c.i < meta ? 'más bajo que el tuyo' : 'más alto que el tuyo';
@@ -993,8 +1081,6 @@ function lectura(m, o){
   else { una(o.superior ? 'Contraste en el trabajo' : 'Contraste', 'trabajo'); if (o.superior) una('Contraste después', 'superior'); }
   const cara = o.superior ? IDX.superior[o.superior] : o.trabajo ? IDX.trabajo[o.trabajo] : null, n = cara ? Number(cara.nivel) || 0 : 0;
   if (n) out.push(`<div class="lec"><span class="etq">Junto a la cara</span><span class="nm">${n === 5 ? '★ Color estrella' : n === 4 ? 'Muy buen color' : 'Con moderación'}</span></div>`);
-  const e = estiloDe(o, m);
-  if (ESTILO[e]) out.push(`<div class="lec"><span class="etq">Estilo</span><button type="button" class="link" style="min-height:32px" data-a="ver-estilo" data-v="${e}">${esc(ESTILO[e].nombre)}</button></div>`);
   return out.join('');
 }
 /* Una prenda del outfit. Con ctx ('hoy' o 'armar') la fila se toca para cambiarla o fijarla. */
@@ -1014,11 +1100,12 @@ function vistaOutfit(m, o, ctx){
   if (!pa || !z || !b || !a || (m === 'normal' ? !t : !w)) return `<p class="txt2"><b>Outfit incompleto.</b> Usa una prenda que ya no existe en tu hoja.</p>`;
   const inv = !!R.invisibles[z.id], f = k => filaPieza(ctx, m, o, k);
   const base = f('pantalon') + f('zapatos') + f('cinturon') + f('capa') + f('accesorios');
-  if (m === 'normal') return `<div class="look">${figura(t, ca, b, pa, z, a, inv)}<div>${lectura(m, o)}</div></div><div class="lista plana">${f('superior')}${base}</div>`;
-  if (t) return `<div class="duo"><figure>${figura(w, ca, b, pa, z, a, inv)}<figcaption>En el trabajo</figcaption></figure><figure>${figura(t, ca, b, pa, z, a, inv)}<figcaption>Después</figcaption></figure></div>
-    <div class="mt2">${lectura(m, o)}</div><p class="nota mt2">Solo cambia la playera; lo demás se queda igual todo el día.</p>
-    <div class="lista plana">${f('trabajo')}${f('superior')}${base}</div>`;
-  return `<div class="look">${figura(w, ca, b, pa, z, a, inv)}<div>${lectura(m, o)}</div></div><div class="lista plana">${f('trabajo')}${base}</div>`;
+  /* .outfit: en computadora la figura queda a la izquierda y las prendas a la derecha */
+  if (m === 'normal') return `<div class="outfit"><div class="look">${figura(t, ca, b, pa, z, a, inv)}<div>${lectura(m, o)}</div></div><div class="lista plana">${f('superior')}${base}</div></div>`;
+  if (t) return `<div class="outfit"><div><div class="duo"><figure>${figura(w, ca, b, pa, z, a, inv)}<figcaption>En el trabajo</figcaption></figure><figure>${figura(t, ca, b, pa, z, a, inv)}<figcaption>Después</figcaption></figure></div>
+    <div class="mt2">${lectura(m, o)}</div><p class="nota mt2">Solo cambia la playera; lo demás se queda igual todo el día.</p></div>
+    <div class="lista plana">${f('trabajo')}${f('superior')}${base}</div></div>`;
+  return `<div class="outfit"><div class="look">${figura(w, ca, b, pa, z, a, inv)}<div>${lectura(m, o)}</div></div><div class="lista plana">${f('trabajo')}${base}</div></div>`;
 }
 function pista(ctx, m, o){
   const s = sugerenciaCapa(m, o);
@@ -1029,17 +1116,21 @@ const contextoOutfit = ctx => ctx === 'hoy' ? { m: az.modo, o: az.actual } : { m
 function hojaPieza(ctx, k){
   const { m, o } = contextoOutfit(ctx); if (!o || !o[k]) return;
   const p = IDX[k][o[k]], fijas = ctx === 'hoy' ? fijasHoy(k) : [];
-  const alts = alternativas(m, o, k, fijas).filter(a => a.p.id !== o[k]), fija = ctx === 'hoy' && az.fijas.indexOf(k) >= 0;
+  /* La lista incluye la prenda puesta (marcada con ✓) y no cambia de orden: así puedes probar varias sin que la ventana se cierre */
+  const alts = alternativas(m, o, k, fijas), fija = ctx === 'hoy' && az.fijas.indexOf(k) >= 0, e1 = estiloDe(o, m);
   abrirHoja(etiquetaDe(m, k), `
     <div class="fila" style="padding:8px 0">${muestra(p)}<span class="tx"><span class="nm">${esc(p.nombre)}${estrella(p)}</span><span class="sub">${esc(p.hex || '')}</span></span></div>
     ${p.nota ? `<p class="txt2 mt1">${esc(p.nota)}</p>` : ''}
+    ${ESTILO[e1] ? `<div class="chips mt2"><span class="chip">${bolitas(ESTILO[e1].ej)}Combinación ${esc(ESTILO[e1].nombre.toLowerCase())}</span></div>` : ''}
     ${ctx === 'hoy' ? `<div class="lista mt3"><div class="fila"><span class="tx"><span class="nm">Fijar esta prenda</span><span class="sub">Se queda cuando pides otro outfit.</span></span>${sw('fijar', fija, `data-k="${k}"`, 'Fijar esta prenda')}</div></div>` : ''}
     <h3 class="h3">Cambiar por</h3>
-    ${alts.length ? `<div class="lista">${alts.map(({ p: x, x: otro, cambia }) => {
-        const e1 = estiloDe(o, m), e2 = estiloDe(otro, m), nota = e1 !== e2 && ESTILO[e2] ? ' · queda ' + ESTILO[e2].nombre.toLowerCase() : '';
+    ${alts.some(a => a.p.id !== o[k]) ? `<p class="nota" style="margin-bottom:8px">Prueba las que quieras; el outfit cambia al momento y esta ventana sigue abierta.</p><div class="lista">${alts.map(({ p: x, x: otro, cambia }) => {
+        if (x.id === o[k]) return `<div class="fila actual">${muestra(x)}<span class="tx"><span class="nm">${esc(x.nombre)}${estrella(x)}</span><span class="sub">Puesta ahora</span></span><span class="fin">✓</span></div>`;
+        const e2 = estiloDe(otro, m), nota = ESTILO[e2] ? (e1 !== e2 ? ' · queda ' : ' · sigue ') + ESTILO[e2].nombre.toLowerCase() : '';
         return `<button type="button" class="fila" data-a="elegir-alt" data-ctx="${ctx}" data-k="${k}" data-id="${esc(x.id)}">
-        ${muestra(x)}<span class="tx"><span class="nm">${esc(x.nombre)}${estrella(x)}</span><span class="sub">${cambia.length ? 'También cambia: ' + cambia.map(f => nomCampo(m, f)).join(', ') : 'Solo cambia esta prenda'}${esc(nota)}</span></span>${FLECHA}</button>`; }).join('')}</div>`
-      : `<p class="txt2">No hay otra opción que combine con el resto${fijas.length ? ' y con lo que fijaste' : ''}.</p>`}`);
+        ${muestra(x)}<span class="tx"><span class="nm">${esc(x.nombre)}${estrella(x)}</span><span class="sub">${cambia.length ? 'También cambia: ' + cambia.map(f => nomCampo(m, f)).join(', ') : 'Solo cambia esta prenda'}${esc(nota)}</span></span></button>`; }).join('')}</div>`
+      : `<p class="txt2">No hay otra opción que combine con el resto${fijas.length ? ' y con lo que fijaste' : ''}.</p>`}`,
+    `<button class="btn prim" type="button" data-a="cerrar">Listo</button>`);
 }
 
 /* ---------- Estilos de combinación ---------- */
@@ -1245,19 +1336,45 @@ function hojaFavorito(id){
 /* ---------- Inventario: primero categorías, luego prendas ---------- */
 const nomCat = k => CAT[k] ? CAT[k].nombre : k;
 const inventariables = () => D.prendas.filter(p => PID[p.id] === p);
+const enUso = p => p.tengo && p.disponible;
+/* Indicador de una prenda: con cuántos outfits completos va hoy; si no la tienes disponible, cuántos más saldrían con ella */
+function cuentaHtml(p){
+  const c = cuentas(), mia = !controla(p.categoria) || enUso(p), n = mia ? (c.hace[p.id] || 0) : (c.abre[p.id] || 0);
+  const texto = mia ? `Va en ${plural(n, 'outfit', 'outfits')} que puedes armar hoy` : `Si la tuvieras disponible saldrían ${plural(n, 'outfit más', 'outfits más')}`;
+  return `<span class="cuenta ${n ? '' : 'cero'}" data-cuenta="${esc(p.id)}" title="${texto}" aria-label="${texto}"><b>${mia ? n : '+' + n}</b><small>${mia ? (n === 1 ? 'outfit' : 'outfits') : 'abriría'}</small></span>`;
+}
+/* Al marcar una prenda cambian los números de las demás: se actualizan sin mover la lista */
+function pintarCuentas(){
+  document.querySelectorAll('[data-cuenta]').forEach(el => { const p = PID[el.dataset.cuenta]; if (p) el.outerHTML = cuentaHtml(p); });
+  const b = $('pr-outfits'); if (b && PID[b.dataset.id]) b.outerHTML = htmlOutfitsPrenda(PID[b.dataset.id]);
+  const s = $('inv-cuantas'); if (s && invSub && FUENTE[invSub]) s.textContent = tengoDe(FUENTE[invSub].filter(p => !p.fija), controla(invSub));
+}
+const tengoDe = (l, cuenta) => `Tienes ${l.filter(p => p.tengo).length} de ${l.length}` + (cuenta ? ` · ${plural(l.filter(enUso).length, 'disponible', 'disponibles')}` : '');
 function filaPrenda(p, sub){
   const off = !controla(p.categoria);
   const estado = off ? 'No cuenta para outfits' : p.tengo && !p.disponible ? 'No disponible por ahora' : sub || '';
   return `<div class="fila ${off ? 'off' : ''}"><button type="button" class="abre" data-a="editar" data-id="${esc(p.id)}">${muestra(p)}
-    <span class="tx"><span class="nm">${esc(p.nombre)}${estrella(p)}</span>${estado ? `<span class="sub ${p.tengo && !p.disponible && !off ? 'ojo' : ''}">${esc(estado)}</span>` : ''}</span></button>
+    <span class="tx"><span class="nm">${esc(p.nombre)}${estrella(p)}</span>${estado ? `<span class="sub ${p.tengo && !p.disponible && !off ? 'ojo' : ''}">${esc(estado)}</span>` : ''}</span>${cuentaHtml(p)}</button>
     ${sw('tengo', p.tengo, `data-id="${esc(p.id)}"`, 'La tengo: ' + p.nombre)}</div>`;
 }
+/* En la hoja de una prenda: cuántos outfits da y de qué tipos de combinación */
+function htmlOutfitsPrenda(p){
+  const c = cuentas(), mia = !controla(p.categoria) || enUso(p), h = c.hace[p.id] || 0, a = c.abre[p.id] || 0, u = c.uso[p.id] || 0;
+  const tipos = mia ? tiposDePrenda(p) : [];
+  const frase = !u ? 'No aparece en ninguna combinación de tu hoja.'
+    : mia ? (h ? `Va en <b>${plural(h, 'outfit', 'outfits')}</b> que puedes armar hoy.` : 'Hoy no completa ningún outfit: le faltan otras prendas.')
+    : (a ? `Si la tuvieras disponible saldrían <b>${plural(a, 'outfit más', 'outfits más')}</b>.` : 'Por sí sola no abre outfits nuevos: también faltan otras prendas.');
+  return `<div class="card mt3" id="pr-outfits" data-id="${esc(p.id)}"><span class="etq">Outfits con esta prenda</span><p class="txt2 mt1">${frase}</p>
+    ${tipos.length ? `<span class="etq mt2">Tipos de combinación</span><div class="chips mt1">${tipos.map(({ e, n }) => `<span class="chip">${bolitas(e.ej)}${esc(e.nombre)} · ${n}</span>`).join('')}</div>` : ''}
+    ${u ? `<p class="nota mt2">Con toda tu paleta (tengas o no las prendas) aparece en ${plural(u, 'outfit', 'outfits')}.</p>` : ''}</div>`;
+}
 function htmlResumen(){
-  const inv = inventariables().filter(p => controla(p.categoria)), mias = inv.filter(p => p.tengo);
+  const inv = inventariables().filter(p => controla(p.categoria)), mias = inv.filter(p => p.tengo), disp = mias.filter(enUso);
   const n = TODOS.personal.filter(estricto).length + TODOS.trabajo.filter(estricto).length;
-  return `<div class="card" id="resumen"><p class="nm">Tienes ${mias.length} de ${inv.length} prendas</p>
-    <div class="barra mt1"><i style="width:${inv.length ? Math.round(mias.length / inv.length * 100) : 0}%"></i></div>
-    <p class="txt2 mt1">Con lo disponible salen ${plural(n, 'outfit', 'outfits')}.</p></div>`;
+  const pct = inv.length ? Math.round(mias.length / inv.length * 100) : 0;
+  return `<div class="card" id="resumen"><div class="linea" style="margin:0"><p class="nm">Tienes ${mias.length} de ${inv.length} prendas (${pct} %)</p><span class="chip">${plural(disp.length, 'disponible', 'disponibles')}</span></div>
+    <div class="barra mt1"><i style="width:${pct}%"></i></div>
+    <p class="txt2 mt1">Con lo disponible salen ${plural(n, 'outfit', 'outfits')}.${mias.length > disp.length ? ` ${plural(mias.length - disp.length, 'prenda tuya no está disponible', 'prendas tuyas no están disponibles')} por ahora.` : ''}</p></div>`;
 }
 const coincideBusqueda = p => { const q = invBuscar.trim().toLowerCase(); return !q || [p.nombre, p.familia, p.hex, p.nota, nomCat(p.categoria)].some(v => String(v || '').toLowerCase().indexOf(q) >= 0); };
 function listaTengo(){
@@ -1267,22 +1384,24 @@ function listaTengo(){
       : `<div class="vacio"><p class="h2">Sin resultados</p>No hay prendas que coincidan con «${esc(invBuscar)}».</div>`;
   }
   return `<div class="lista mt2">${D.categorias.filter(c => FUENTE[c.clave] && FUENTE[c.clave].some(p => !p.fija)).map(c => {
-    const l = FUENTE[c.clave].filter(p => !p.fija), n = l.filter(p => p.tengo).length;
-    return `<button type="button" class="fila" data-a="inv-sub" data-v="${esc(c.clave)}"><span class="tx"><span class="nm">${esc(c.nombre)}</span><span class="sub">${controla(c.clave) ? `Tienes ${n} de ${l.length}` : 'No cuenta para outfits'}</span></span>${FLECHA}</button>`;
+    const l = FUENTE[c.clave].filter(p => !p.fija), n = l.filter(p => p.tengo).length, d = l.filter(enUso).length;
+    return `<button type="button" class="fila" data-a="inv-sub" data-v="${esc(c.clave)}"><span class="tx"><span class="nm">${esc(c.nombre)}</span><span class="sub">${controla(c.clave) ? `Tienes ${n} de ${l.length}` : 'No cuenta para outfits'}</span></span>
+      <span class="fin">${controla(c.clave) ? `<span class="chip">${plural(d, 'disponible', 'disponibles')}</span>` : ''}${FLECHA}</span></button>`;
   }).join('')}</div>`;
 }
 function listaFalta(){
   const f = faltantes(), claves = f.filter(x => x.abre > 0).slice(0, 3), resto = f.filter(x => claves.indexOf(x) < 0);
-  const sub = x => nomCat(x.p.categoria) + ' · ' + (x.abre ? 'Abre ' + plural(x.abre, 'outfit más', 'outfits más') : x.uso ? 'Va en ' + plural(x.uso, 'outfit', 'outfits') + ', con otras que faltan' : 'No aparece en ninguna combinación');
+  const sub = x => nomCat(x.p.categoria) + (x.abre ? '' : ' · ') + (x.abre ? '' : x.uso ? 'Va en ' + plural(x.uso, 'outfit', 'outfits') + ', con otras que faltan' : 'No aparece en ninguna combinación');
   if (!f.length) return `<div class="vacio"><p class="h2">No te falta nada</p>Tienes todas las prendas de tu paleta.</div>`;
   return (claves.length ? `<h3 class="h3">Conviene conseguir primero</h3><p class="nota" style="margin-bottom:8px">Cada una completa outfits que hoy no salen.</p><div class="lista">${claves.map(x => filaPrenda(x.p, sub(x))).join('')}</div>` : '')
     + (resto.length ? `<details class="mas"><summary>Ver ${claves.length ? 'las otras ' : 'las '}${resto.length} que faltan ${FLECHA}</summary><div class="lista">${resto.map(x => filaPrenda(x.p, sub(x))).join('')}</div></details>` : '');
 }
 function vInventario(){
   if (invSub && CAT[invSub]) {
-    const l = FUENTE[invSub].filter(p => !p.fija), n = l.filter(p => p.tengo).length;
-    return cabeza(nomCat(invSub), `Tienes ${n} de ${l.length}`, { a: 'inv-sub', t: 'Inventario' })
-      + `<p class="nota">El interruptor marca si la tienes. Toca la prenda para ver más.</p><div class="lista mt2" id="inv-lista">${l.map(p => filaPrenda(p, '')).join('')}</div>`;
+    const l = FUENTE[invSub].filter(p => !p.fija);
+    return cabeza(nomCat(invSub), '', { a: 'inv-sub', t: 'Inventario' })
+      + `<p class="nm" id="inv-cuantas">${tengoDe(l, controla(invSub))}</p>
+      <p class="nota mt1">El interruptor marca si la tienes. El número dice en cuántos outfits va hoy cada prenda (o cuántos abriría, con «+»). Toca la prenda para ver más.</p><div class="lista mt2" id="inv-lista">${l.map(p => filaPrenda(p, '')).join('')}</div>`;
   }
   return cabeza('Inventario') + htmlResumen()
     + `<div class="mt3">${seg('inv', [['tengo', 'Mis prendas'], ['falta', 'Me falta']], invVista, 'Vista del inventario')}</div>`
@@ -1310,6 +1429,7 @@ function hojaPrenda(id){
       <div class="fila"><span class="tx"><span class="nm">Disponible</span><span class="sub">Apágalo si está en la lavandería o prestada.</span></span>${sw('disp', p.disponible, `data-id="${esc(p.id)}"`, 'Disponible')}</div>
     </div>
     <p class="nota mt1">${off ? 'Esta categoría no cuenta para outfits (Perfil › Preferencias).' : 'Se guarda al momento.'}</p>
+    ${htmlOutfitsPrenda(p)}
     <details class="mas"><summary>Editar nombre, color y nota ${FLECHA}</summary>
       <label class="campo"><span>Nombre</span><input type="text" id="f-nombre" value="${esc(p.nombre)}"></label>
       ${color('f-color', 'f-hex', p.hex, acc ? 'Color del metal' : 'Color')}
@@ -1357,8 +1477,12 @@ function inspector(key){
   }
   const c = PID[key.slice(2)]; if (!c) return '';
   const n = Number(c.nivel) || 0, combos = D.combinaciones.filter(x => x.superior === c.id && !(x.activa === false || x.activa === 'FALSE')).length;
+  /* De qué tipo son las combinaciones de este color (con toda la paleta, la tengas o no) */
+  const tn = {}; TODOS.personal.forEach(o => { if (o.superior === c.id) tn[estiloDe(o, 'normal')] = 1; });
+  const tipos = ESTILOS.filter(e => tn[e.id]);
   return `<div class="card"><div class="fila" style="padding:0">${muestra(c)}<span class="tx"><span class="nm">${esc(c.nombre)}${estrella(c)}</span><span class="sub">${esc(c.hex || '')}</span></span></div>
-    <p class="txt2 mt2">${NIVEL_TXT(n)} · ${c.tengo ? 'La tienes' : 'No la tienes'} · ${plural(combos, 'combinación', 'combinaciones')}</p>${c.nota ? `<p class="nota mt1">${esc(c.nota)}</p>` : ''}</div>`;
+    <p class="txt2 mt2">${NIVEL_TXT(n)} · ${c.tengo ? 'La tienes' : 'No la tienes'} · ${plural(combos, 'combinación', 'combinaciones')}</p>
+    ${tipos.length ? `<div class="chips mt1">${tipos.map(e => `<span class="chip">${bolitas(e.ej)}${esc(e.nombre)}</span>`).join('')}</div>` : ''}${c.nota ? `<p class="nota mt1">${esc(c.nota)}</p>` : ''}</div>`;
 }
 function subPerfil(){
   const atras = { a: 'perf-sub', t: 'Perfil' };
@@ -1483,6 +1607,8 @@ function abrirHoja(titulo, cuerpo, pie){
   h.style.transform = ''; $('velo').style.opacity = '';
   $('velo').hidden = false; h.hidden = false; h.scrollTop = yaAbierta ? st : 0;
   if (!document.body.classList.contains('bloq')) { scrollGuardado = window.scrollY; document.body.style.top = -scrollGuardado + 'px'; document.body.classList.add('bloq'); }
+  /* Con teclado: el foco entra a la ventana para que Tab y Esc funcionen dentro de ella */
+  if (!h.contains(document.activeElement)) { try { h.focus({ preventScroll: true }); } catch (e) {} }
 }
 function cerrarHoja(){
   const h = $('hoja'); $('velo').hidden = true; h.hidden = true; h.style.transform = ''; $('velo').style.opacity = '';
@@ -1624,7 +1750,8 @@ const ACC = {
     const a = alternativas(m, o, k, ctx === 'hoy' ? fijasHoy(k) : []).find(x => x.p.id === el.dataset.id); if (!a) return;
     if (ctx === 'hoy') { az.actual = a.x; if (k === 'trabajo' && az.playera) az.playera = a.x.trabajo; az.recientes.push(claveVisual(a.x)); if (az.recientes.length > 12) az.recientes.shift(); }
     else { if (estiloArmar && estiloDe(a.x, m) !== estiloArmar) { estiloArmar = ''; guardarEstilos(); } ponerEnSel(a.x); }
-    cerrarHoja(); marcada = k; render();
+    /* La ventana no se cierra: se vuelve a dibujar con la nueva prenda marcada, para seguir probando */
+    marcada = k; render(); hojaPieza(ctx, k);
   },
   fijar(el){ const k = el.dataset.k, i = az.fijas.indexOf(k); if (i >= 0) az.fijas.splice(i, 1); else az.fijas.push(k); encender(el, i < 0); render(); },
   /* Hoy */
@@ -1643,13 +1770,13 @@ const ACC = {
     if (nombre !== (f.nombre || '')) cambios.nombre = nombre;
     if (nota !== (f.nota || '')) cambios.nota = nota;
     if (Object.keys(cambios).length) { Object.assign(f, cambios); encolar({ action: 'favorito.update', id: f.id, cambios }); }
-    confirmar(el, 'Guardado', () => { render(); hojaFavorito(f.id); });
+    confirmar(el, 'Guardado', () => { render(); if (el.isConnected && !$('hoja').hidden) hojaFavorito(f.id); });
   },
   'fav-usado'(el){
     const f = D.favoritos.find(x => String(x.id) === el.dataset.id); if (!f) return;
     const cambios = { usos: usos(f) + 1, ultimo_uso: hoy() };
     Object.assign(f, cambios); encolar({ action: 'favorito.update', id: f.id, cambios });
-    confirmar(el, 'Usado hoy', () => { render(); hojaFavorito(f.id); });
+    confirmar(el, 'Usado hoy', () => { render(); if (el.isConnected && !$('hoja').hidden) hojaFavorito(f.id); });
   },
   'fav-armar'(el){ const f = D.favoritos.find(x => String(x.id) === el.dataset.id); if (f) abrirEnArmar(modoDeFav(f), outfitDeFav(f)); },
   'fav-borrar'(el){ const f = D.favoritos.find(x => String(x.id) === el.dataset.id); if (!f) return; cerrarHoja(); quitarFav(f); render(); },
@@ -1660,7 +1787,8 @@ const ACC = {
     cambiarPrenda(p, { tengo: !p.tengo }); encender(el, p.tengo);
     /* El interruptor de la hoja también actualiza su gemelo en la lista */
     document.querySelectorAll(`#pantalla [data-a="tengo"][data-id="${CSS.escape(p.id)}"]`).forEach(x => encender(x, p.tengo));
-    if (el.closest('#hoja')) return;
+    pintarCuentas();
+    if (el.closest('#hoja')) { const r = $('resumen'); if (r) r.outerHTML = htmlResumen(); return; }
     /* En «Me falta» la lista no se reacomoda bajo tu dedo: la fila se marca y se reordena al volver */
     if (tab === 'inventario' && invVista === 'falta' && !invSub) {
       const f = el.closest('.fila'), s = f && f.querySelector('.sub');
@@ -1671,7 +1799,7 @@ const ACC = {
     }
     const r = $('resumen'); if (r) r.outerHTML = htmlResumen();
   },
-  disp(el){ const p = PID[el.dataset.id]; if (!p) return; cambiarPrenda(p, { disponible: !p.disponible }); encender(el, p.disponible); refrescarInventario(); },
+  disp(el){ const p = PID[el.dataset.id]; if (!p) return; cambiarPrenda(p, { disponible: !p.disponible }); encender(el, p.disponible); refrescarInventario(); pintarCuentas(); },
   editar(el){ hojaPrenda(el.dataset.id); },
   'guardar-prenda'(el){
     const p = PID[el.dataset.id]; if (!p) return;
@@ -1687,7 +1815,7 @@ const ACC = {
     const niv = document.querySelector('#hoja [data-n="f-nivel"][aria-pressed="true"]');
     if (niv) { const n = niv.dataset.v === '' ? '' : Number(niv.dataset.v); if (n !== (p.nivel === '' || p.nivel == null ? '' : Number(p.nivel))) cambios.nivel = n; }
     if (Object.keys(cambios).length) cambiarPrenda(p, cambios);
-    confirmar(el, 'Guardado', () => { cerrarHoja(); render(); });
+    confirmar(el, 'Guardado', () => { if (el.isConnected) cerrarHoja(); render(); });
   },
   /* Perfil */
   'perf-sub'(el){ perfSub = el.dataset.v || null; render(); subir(); },
@@ -1704,7 +1832,7 @@ const ACC = {
   'guardar-texto'(el){
     const v = $('f-texto').value.trim();
     if (v !== String(pref[el.dataset.k] == null ? '' : pref[el.dataset.k])) ponerPref(el.dataset.k, v);
-    confirmar(el, 'Guardado', () => { cerrarHoja(); render(); });
+    confirmar(el, 'Guardado', () => { if (el.isConnected) cerrarHoja(); render(); });
   },
   'cambiar-url'(){ mostrarSetup(true); }
 };
@@ -1712,7 +1840,20 @@ const ACC = {
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-tab]'); if (t) { irA(t.dataset.tab); return; }
   const el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
-  const fn = ACC[el.dataset.a]; if (fn) fn(el);
+  const fn = ACC[el.dataset.a]; if (!fn) return;
+  /* Si una acción falla, la app sigue viva y avisa en vez de quedarse sin responder */
+  try { fn(el); } catch (err) { console.error(err); toast('Esa acción no se pudo completar. Si se repite, pulsa Actualizar.', 5000); }
+});
+/* Teclado en computadora: Esc cierra la ventana abierta */
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('hoja').hidden) { e.preventDefault(); cerrarHoja(); } });
+/* Dos pestañas del navegador abiertas a la vez: lo que cambia en una se refleja en la otra, sin duplicar envíos */
+window.addEventListener('storage', e => {
+  if (e.key === K.cola && !enviando) { const c = ls.get(K.cola); cola = Array.isArray(c) ? c : []; pintarSync(); }
+  if (e.key === K.datos && !enviando && $('hoja').hidden) {
+    const copia = ls.get(K.datos); if (!datosValidos(copia)) return;
+    const antes = D; D = normalizar(copia);
+    try { construir(); sincronizarAzar(); az.listo = false; revalidar(); render(); } catch (err) { console.error(err); D = antes; if (antes) { try { construir(); } catch (e2) {} } }
+  }
 });
 document.addEventListener('change', e => {
   if (e.target.id === 'pr-foto') { cargarFoto(e.target.files && e.target.files[0]); e.target.value = ''; return; }
@@ -1742,7 +1883,11 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) vaci
 (function arrancar(){
   if (!API) { mostrarSetup(false); return; }
   const copia = ls.get(K.datos);
-  if (datosValidos(copia)) { D = copia; construir(); preferenciasIniciales(); revalidar(); mostrarApp(); vaciar(); return; }
+  /* Si la copia guardada está dañada, no se usa: se vuelve a leer la hoja */
+  if (datosValidos(copia)) {
+    try { D = normalizar(copia); construir(); preferenciasIniciales(); revalidar(); mostrarApp(); vaciar(); return; }
+    catch (e) { console.error(e); D = null; }
+  }
   $('setup').hidden = true; $('app').hidden = false;
   $('pantalla').innerHTML = '<div class="vacio" style="margin-top:20vh"><p class="h2">Cargando tu clóset…</p>Leyendo los datos de Google Sheets.</div>';
   apiLeer(API, 'load').then(d => { if (!datosValidos(d)) throw new Error((d && d.error) || 'NO_JSON'); usarDatos(d); preferenciasIniciales(); revalidar(); render(); })

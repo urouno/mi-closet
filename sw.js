@@ -3,7 +3,7 @@
    de GitHub Pages (y la guarda); si no hay señal, abre la última copia guardada.
    Así los cambios que subes se ven al abrir la app, sin quedarse con una versión vieja.
    Los datos de Google Sheets no pasan por aquí: los guarda la propia app. */
-const CACHE = 'micloset-v4';
+const CACHE = 'micloset-v5';
 const BASICOS = ['./', 'index.html', 'icono.png'];
 
 self.addEventListener('install', e => {
@@ -22,7 +22,7 @@ self.addEventListener('fetch', e => {
   if (r.method !== 'GET' || new URL(r.url).origin !== location.origin) return;
   /* Si la red tarda más de 4 segundos (señal mala), se usa la copia guardada */
   const red = fetch(r).then(res => {
-    if (res.ok) { const copia = res.clone(); caches.open(CACHE).then(c => c.put(r, copia)); }
+    if (res.ok) { const copia = res.clone(); caches.open(CACHE).then(c => c.put(r, copia)).catch(() => {}); }
     return res;
   });
   const guardada = () => caches.match(r).then(m => m || (r.mode === 'navigate' ? caches.match('index.html') : undefined));
