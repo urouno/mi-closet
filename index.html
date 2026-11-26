@@ -12,6 +12,7 @@
 <meta name="format-detection" content="telephone=no">
 <link rel="apple-touch-icon" href="icono.png">
 <link rel="icon" href="icono.png">
+<link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
@@ -81,7 +82,7 @@ body.con-ctx .wrap{padding-bottom:calc(var(--tabs) + env(safe-area-inset-bottom,
 .ojo{color:var(--ojo)!important}
 
 /* Espacios: múltiplos de 8 */
-.mt1{margin-top:8px}.mt2{margin-top:16px}.mt3{margin-top:24px}.mt4{margin-top:32px}
+.mt1{margin-top:8px}.mt2{margin-top:16px}.mt3{margin-top:24px}
 
 /* Encabezado: marca + estado de guardado; luego el título de la pantalla */
 .top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 0 8px}
@@ -310,8 +311,6 @@ button.fila:active,.fila .abre:active{background:var(--well)}
 .evitar span{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 10px 0 6px;border-radius:15px;background:var(--well);font-size:12.5px;font-weight:600;color:var(--ink2)}
 .evitar span i{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--swline);position:relative;overflow:hidden}
 .evitar span i::after{content:"";position:absolute;inset:0;background:linear-gradient(to top right,transparent calc(50% - 1px),var(--ojo) calc(50% - 1px),var(--ojo) calc(50% + 1px),transparent calc(50% + 1px))}
-.tira{display:flex;gap:4px;margin-top:16px}
-.tira i{flex:1;height:8px;border-radius:4px;box-shadow:inset 0 0 0 1px var(--swline)}
 .paleta{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:16px 8px;padding:16px}
 .pal{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:var(--f4);line-height:1.3;color:var(--ink2);text-align:center}
 .pal b{width:52px;height:52px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--swline);position:relative;overflow:hidden}
@@ -597,14 +596,13 @@ const half = c => c && hexOk(c.hex2) ? `<i style="background:${c.hex2}"></i>` : 
 const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
 const si = v => v === true || v === 'true' || v === 'TRUE';
 const corto = n => String(n || '').split(' / ')[0].replace(/\s*\(.*?\)\s*/g, '').trim();
-const STAR = '<span class="star" aria-label="color estrella">★</span>';
 const LOGO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7.2V6.6a1.9 1.9 0 1 0-1.9-1.9"/><path d="M12 7.2 3.9 12.6a1.2 1.2 0 0 0 .7 2.2h14.8a1.2 1.2 0 0 0 .7-2.2L12 7.2z"/><circle cx="8.4" cy="19" r="1.25" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.25" fill="currentColor" stroke="none" opacity=".75"/><circle cx="15.6" cy="19" r="1.25" fill="currentColor" stroke="none" opacity=".5"/></svg>';
 
 let API = ls.get(K.url);          // URL de implementación del Apps Script (se pide una sola vez)
 let D = null;                     // última copia de los datos de Google Sheets
 let cola = ls.get(K.cola);        // cambios hechos en la app que aún no llegan a Google Sheets
 if (!Array.isArray(cola)) cola = [];
-let enVuelo = 0, enviando = false, cargando = false;
+let enVuelo = 0, enviando = false, cargando = false, promesaVaciar = null;
 let guardadoHasta = 0;            // hasta cuándo se muestra «✓ Guardado» arriba
 
 async function pedir(url, opciones){
@@ -657,27 +655,35 @@ function encolar(op){
   else cola.push(op);
   ls.set(K.cola, cola); guardar(); vaciar();
 }
-async function vaciar(){
-  if (enviando || !cola.length || !API) { pintarSync(); return !cola.length; }
-  enviando = true; enVuelo = cola.length; pintarSync();
-  const lote = cola.slice(0, enVuelo);
-  let r = null;
-  try { r = await apiEscribir(lote.length === 1 ? lote[0] : { action: 'batch', ops: lote }); }
-  catch (e) { r = null; }   // sin señal, sin respuesta o respuesta rara: se queda en la cola
-  let ok = false;
-  if (r) {
-    cola = cola.slice(lote.length); ls.set(K.cola, cola); ok = true;
-    const rechazos = r.ok !== true ? [{ error: r.error || 'error desconocido', n: lote.length }]
-      : (r.resultados || []).filter(x => x && x.ok === false).map(x => ({ error: x.error || 'error desconocido', n: 1 }));
-    if (rechazos.length) {
-      const n = rechazos.reduce((a, x) => a + x.n, 0);
-      toast(`Google Sheets rechazó ${plural(n, 'cambio', 'cambios')} (${rechazos[0].error}). Se descartó; pulsa Actualizar para ver tu hoja.`, 7000);
+function vaciar(){
+  if (promesaVaciar) return promesaVaciar;
+  if (!cola.length || !API) { pintarSync(); return Promise.resolve(!cola.length); }
+  promesaVaciar = (async () => {
+    enviando = true;
+    let ok = true;
+    try {
+      while (cola.length && API) {
+        enVuelo = cola.length; pintarSync();
+        const lote = cola.slice(0, enVuelo);
+        let r = null;
+        try { r = await apiEscribir(lote.length === 1 ? lote[0] : { action: 'batch', ops: lote }); }
+        catch (e) { r = null; }   // sin señal, sin respuesta o respuesta rara: se queda en la cola
+        if (!r) { ok = false; break; }
+        cola = cola.slice(lote.length); ls.set(K.cola, cola);
+        const rechazos = r.ok !== true ? [{ error: r.error || 'error desconocido', n: lote.length }]
+          : (r.resultados || []).filter(x => x && x.ok === false).map(x => ({ error: x.error || 'error desconocido', n: 1 }));
+        if (rechazos.length) {
+          const n = rechazos.reduce((a, x) => a + x.n, 0);
+          toast(`Google Sheets rechazó ${plural(n, 'cambio', 'cambios')} (${rechazos[0].error}). Se descartó; pulsa Actualizar para ver tu hoja.`, 7000);
+        }
+      }
+    } finally {
+      enviando = false; enVuelo = 0; promesaVaciar = null;
     }
-  }
-  enviando = false; enVuelo = 0;
-  if (ok && cola.length) return vaciar();
-  if (ok) { guardadoHasta = Date.now() + 2500; setTimeout(pintarSync, 2600); }
-  pintarSync(); return ok;
+    if (ok) { guardadoHasta = Date.now() + 2500; setTimeout(pintarSync, 2600); }
+    pintarSync(); return ok;
+  })();
+  return promesaVaciar;
 }
 function descartarCola(){
   if (enviando) { toast('Espera a que termine el envío en curso.'); return; }
@@ -1079,7 +1085,7 @@ function cambiarModo(m){
   if (estiloArmar && !porEstilo(m === 'normal' ? PERSONAL : TRABAJO.concat(COMBINADOS), m, estiloArmar).length) { estiloArmar = ''; guardarEstilos(); }
   vista = null; revalidar(); render(); subir();
 }
-function reiniciar(){ sel = {}; orden = []; sinCambio = false; historial = []; vista = cats()[0].key; render(); subir(); }
+function reiniciar(){ const cs = cats(); sel = {}; orden = []; sinCambio = false; historial = []; vista = cs.length ? cs[0].key : 'final'; render(); subir(); }
 function ponerEnSel(o){
   cats().forEach(c => { const v = o[c.key]; if (v && sel[c.key] !== v) { sel[c.key] = v; orden = orden.filter(x => x !== c.key); orden.push(c.key); } });
 }
@@ -1102,7 +1108,7 @@ function fijasHoy(k){
   if (az.modo === 'trabajo' && az.playera && k !== 'trabajo' && f.indexOf('trabajo') < 0) f.push('trabajo');
   return f;
 }
-function sortear(){
+function poolHoy(){
   const m = az.modo; let nota = '';
   /* Si la playera elegida ya no está disponible, el filtro se quita en vez de quedarse oculto */
   if (m === 'trabajo' && az.playera && (!IDX.trabajo[az.playera] || !hay('trabajo', az.playera))) { az.playera = ''; nota = 'La playera que habías elegido ya no está disponible; se muestra cualquiera.'; }
@@ -1125,6 +1131,15 @@ function sortear(){
     const f = pool.filter(o => az.fijas.every(k => igual(o, ant, k)));
     if (f.length) pool = f; else { nota = 'Con las prendas fijadas ya no hay opciones; se soltaron.'; az.fijas = []; }
   }
+  return { pool, nota };
+}
+function recalcularTotalHoy(){
+  if (!az.actual) { az.total = 0; return; }
+  const { pool } = poolHoy();
+  az.total = pool.length;
+}
+function sortear(){
+  const m = az.modo, ant = az.actual, { pool, nota } = poolHoy();
   az.total = pool.length; az.nota = nota;
   if (!pool.length) { az.actual = null; return; }
   let frescos = pool.filter(o => az.recientes.indexOf(claveVisual(o)) < 0);
@@ -1337,7 +1352,8 @@ function vistaOutfit(m, o, ctx){
   return `<div class="outfit"><div class="look"><div class="escena">${figura(w, ca, b, pa, z, a, inv)}</div><div>${lectura(m, o)}</div></div><div class="lista plana">${f('trabajo')}${base}</div></div>`;
 }
 function pista(ctx, m, o){
-  const s = sugerenciaCapa(m, o);
+  if (ctx === 'hoy' && az.capa === 'Sin capa') return '';
+  const s = sugerenciaCapa(m, o, ctx === 'hoy' ? estiloHoy : estiloArmar);
   return s ? `<div class="consejo">${ICO_SPARK}<div class="tx">Con la capa <b>${esc(corto(s.capa.nombre).toLowerCase())}</b> el contraste sube a ${s.c.nombre.toLowerCase()}, más cerca del tuyo.<br><button type="button" class="link" data-a="poner-capa" data-ctx="${ctx}" data-id="${esc(s.capa.id)}">Agregar la capa</button></div></div>` : '';
 }
 const contextoOutfit = ctx => ctx === 'hoy' ? { m: az.modo, o: az.actual } : { m: modo, o: outfitDeSel() };
@@ -1451,10 +1467,10 @@ function ctxHoy(){
 function vArmar(){
   const cs = cats();
   if (vista === 'final' && !completo()) vista = primeraObligatoria();
-  if (vista !== 'final' && !cs.some(c => c.key === vista)) vista = cs[0].key;
+  if (vista !== 'final' && !cs.some(c => c.key === vista)) vista = cs.length ? cs[0].key : 'final';
   const top = cabeza('Arma tu outfit', 'Paso a paso, solo con lo que combina')
     + `<div class="barra-modo">${seg('modo', [['normal', 'Normal'], ['trabajo', 'Trabajo']], modo, 'Tipo de outfit')}</div>`;
-  if (sinOutfits()) return top + vBloqueo();
+  if (sinOutfits() || !cs.length) return top + vBloqueo();
   const i = cs.findIndex(c => c.key === vista), actual = cs[i];
   const paso = vista === 'final' ? `Listo · ${cs.length} de ${cs.length}` : `Paso ${i + 1} de ${cs.length} · ${actual.label}`;
   const corta = p => p.key === 'trabajo' ? 'Trabajo' : p.label;
@@ -1469,7 +1485,7 @@ function vBloqueo(){
   if (!(modo === 'normal' ? TODOS.personal : TODOS.trabajo).length)
     return `<div class="vacio"><p class="h2">No hay combinaciones activas</p>Revisa las hojas Combinaciones y Reglas. Los avisos están en Perfil › Conexión.</div>`;
   const vacias = cats().filter(c => !c.opcional && controla(c.key) && !FUENTE[c.key].some(p => !p.fija && laTengo(c.key, p.id))).map(c => c.label.toLowerCase());
-  return `<div class="vacio"><p class="h2">Con tus prendas aún no sale un outfit</p>${vacias.length ? 'No tienes nada marcado en ' + vacias.join(', ') + '.' : 'Lo que tienes marcado no coincide en ninguna combinación completa.'}
+  return `<div class="vacio"><p class="h2">Con tus prendas aún no sale un outfit</p>${vacias.length ? 'No tienes nada marcado en ' + esc(vacias.join(', ')) + '.' : 'Lo que tienes marcado no coincide en ninguna combinación completa.'}
     <button class="btn prim" type="button" data-a="tab" data-v="inventario">Marcar mis prendas</button>
     <button class="btn sec" type="button" data-a="paleta-completa">Usar toda mi paleta</button></div>`;
 }
@@ -1520,8 +1536,9 @@ function faltaDe(o){
   return '';
 }
 function fechaCorta(f){
-  const p = String(f || '').slice(0, 10).split('-'); if (p.length < 3 || !Number(p[1])) return '';
-  return Number(p[2]) + ' ' + ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][Number(p[1]) - 1];
+  const p = String(f || '').slice(0, 10).split('-').map(Number);
+  if (p.length < 3 || !p[0] || p[1] < 1 || p[1] > 12 || p[2] < 1 || p[2] > 31) return '';
+  return p[2] + ' ' + ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][p[1] - 1];
 }
 function laminas(m, o){
   const g = k => o[k] ? IDX[k][o[k]] : null, pa = g('pantalon'), z = g('zapatos'), b = g('cinturon'), ca = g('capa'), a = g('accesorios'), t = g('superior'), w = g('trabajo');
@@ -1532,7 +1549,8 @@ function laminas(m, o){
 const usos = f => Number(f.usos) || 0;
 /* «hoy», «ayer», «hace 3 días»… y después la fecha */
 function cuandoFue(f){
-  const p = String(f || '').slice(0, 10).split('-').map(Number); if (p.length < 3 || !p[1]) return '';
+  const p = String(f || '').slice(0, 10).split('-').map(Number);
+  if (p.length < 3 || !p[0] || p[1] < 1 || p[1] > 12 || p[2] < 1 || p[2] > 31) return '';
   const d = Math.round((new Date(new Date().toDateString()) - new Date(p[0], p[1] - 1, p[2])) / 864e5);
   return d <= 0 ? 'hoy' : d === 1 ? 'ayer' : d < 14 ? 'hace ' + d + ' días' : 'el ' + fechaCorta(f);
 }
@@ -1683,6 +1701,7 @@ function refrescarInventario(){
   const l = $('inv-lista'); if (!l) return;
   if (invSub) render(); else l.innerHTML = invVista === 'tengo' ? listaTengo() : listaFalta();
 }
+const badgePrenda = p => !controla(p.categoria) ? '<span class="badge gris">No cuenta para outfits</span>' : !p.tengo ? '<span class="badge gris">No la tienes</span>' : p.disponible ? '<span class="badge ok">Disponible</span>' : '<span class="badge pausa">En pausa</span>';
 function hojaPrenda(id){
   const p = PID[id]; if (!p) return;
   const cara = ['superior', 'capa', 'trabajo'].indexOf(p.categoria) >= 0, acc = p.categoria === 'accesorios', off = !controla(p.categoria);
@@ -1692,7 +1711,7 @@ function hojaPrenda(id){
       <input type="text" id="${idh}" data-par="${idc}" value="${esc(valor || '')}" placeholder="#1F5560" maxlength="7" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Código HEX"></div></div>`;
   abrirHoja(nomCat(p.categoria), `
     <div class="pz-cab">${muestra(p)}<span class="tx"><span class="nm">${esc(p.nombre)}${estrella(p)}</span><span class="sub">${esc([p.hex, p.familia].filter(Boolean).join(' · '))}</span>
-      <span class="sub">${off ? '<span class="badge gris">No cuenta para outfits</span>' : !p.tengo ? '<span class="badge gris">No la tienes</span>' : p.disponible ? '<span class="badge ok">Disponible</span>' : '<span class="badge pausa">En pausa</span>'}</span></span></div>
+      <span class="sub" id="pr-estado">${badgePrenda(p)}</span></span></div>
     ${p.nota ? `<p class="txt2 mt1">${esc(p.nota)}</p>` : ''}
     <div class="lista mt3">
       <div class="fila"><span class="tx"><span class="nm">La tengo</span></span>${sw('tengo', p.tengo, `data-id="${esc(p.id)}"`, 'La tengo')}</div>
@@ -1829,7 +1848,7 @@ function hojaProbador(){
   abrirHoja('Probador de color', `
     <p class="txt2">Toma una foto con luz de día y toca la tela para leer su color.</p>
     <p class="nota mt1">La cámara cambia un poco los tonos: úsalo como guía, no como veredicto final.</p>
-    <div class="pila"><label class="btn prim" for="pr-foto" tabindex="0">${ICO_CAM}Tomar o elegir foto</label></div>
+    <div class="pila"><button class="btn prim" type="button" data-a="elegir-foto">${ICO_CAM}Tomar o elegir foto</button></div>
     <input type="file" id="pr-foto" class="vh" accept="image/*">
     <div class="lienzo" id="pr-lienzo" hidden><canvas id="pr-canvas"></canvas><i class="mira" id="pr-mira" hidden></i></div>
     <details class="mas"><summary>O escribe el color a mano ${FLECHA}</summary><div class="campo"><div class="color-in">
@@ -1838,9 +1857,15 @@ function hojaProbador(){
     <div id="pr-res" class="mt3"></div>`);
   const cv = $('pr-canvas');
   cv.addEventListener('click', e => {
-    const r = cv.getBoundingClientRect(), x = Math.round((e.clientX - r.left) * cv.width / r.width), y = Math.round((e.clientY - r.top) * cv.height / r.height);
-    const px = cv.getContext('2d').getImageData(Math.max(0, x - 4), Math.max(0, y - 4), 9, 9).data;
-    let s = [0, 0, 0], n = 0; for (let i = 0; i < px.length; i += 4) { s[0] += px[i]; s[1] += px[i + 1]; s[2] += px[i + 2]; n++; }
+    if (!cv.width || !cv.height) return;
+    const r = cv.getBoundingClientRect();
+    const x = Math.max(0, Math.min(cv.width - 1, Math.round((e.clientX - r.left) * cv.width / r.width)));
+    const y = Math.max(0, Math.min(cv.height - 1, Math.round((e.clientY - r.top) * cv.height / r.height)));
+    const sx = Math.max(0, x - 4), sy = Math.max(0, y - 4), sw = Math.min(9, cv.width - sx), sh = Math.min(9, cv.height - sy);
+    const px = cv.getContext('2d', { willReadFrequently: true }).getImageData(sx, sy, sw, sh).data;
+    let s = [0, 0, 0], n = 0;
+    for (let i = 0; i < px.length; i += 4) { if (px[i + 3] === 0) continue; s[0] += px[i]; s[1] += px[i + 1]; s[2] += px[i + 2]; n++; }
+    if (!n) return;
     const hex = '#' + s.map(v => Math.round(v / n).toString(16).padStart(2, '0')).join('').toUpperCase();
     const mira = $('pr-mira'); mira.hidden = false; mira.style.left = (x / cv.width * 100) + '%'; mira.style.top = (y / cv.height * 100) + '%'; mira.style.background = hex;
     $('pr-color').value = hex.toLowerCase(); $('pr-hex').value = hex; mostrarEvaluacion(hex);
@@ -1850,11 +1875,12 @@ function cargarFoto(file){
   if (!file) return;
   const url = URL.createObjectURL(file), img = new Image();
   img.onload = () => {
+    URL.revokeObjectURL(url);
     const cv = $('pr-canvas'); if (!cv) return;
     const k = Math.min(1, 1100 / Math.max(img.width, img.height));
     cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
-    cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
-    URL.revokeObjectURL(url); $('pr-lienzo').hidden = false; $('pr-mira').hidden = true;
+    cv.getContext('2d', { willReadFrequently: true }).drawImage(img, 0, 0, cv.width, cv.height);
+    $('pr-lienzo').hidden = false; $('pr-mira').hidden = true;
     $('pr-res').innerHTML = '<p class="nm">Ahora toca la prenda en la foto.</p>';
   };
   img.onerror = () => { URL.revokeObjectURL(url); toast('No se pudo abrir esa imagen.'); };
@@ -1908,6 +1934,7 @@ function cerrarHoja(){
     e.preventDefault(); h.style.transform = `translateY(${dy}px)`;
   }, { passive: false });
   h.addEventListener('touchend', () => { if (y0 == null) return; y0 = null; if (dy > 110) cerrarHoja(); else h.style.transform = ''; });
+  h.addEventListener('touchcancel', () => { y0 = null; dy = 0; h.style.transform = ''; });
 })();
 let relojToast;
 /* Aviso breve, solo para confirmar o avisar de un problema. accion = {texto, fn} agrega un botón (por ejemplo, Deshacer). */
@@ -1976,7 +2003,6 @@ const ACC = {
     if (n === 'modo') cambiarModo(v);
     else if (n === 'azmodo') { if (az.modo !== v) { az.modo = v; az.fijas = []; sortear(); render(); } }
     else if (n === 'inv') { invVista = v; render(); }
-    else if (n === 'favfiltro') { favFiltro = v; render(); }
     /* Esta opción se guarda en Perfil, así la app y la hoja dicen lo mismo */
     else if (n === 'azcapa') { ponerPref('azar_capa', v); az.fijas = az.fijas.filter(k => k !== 'capa'); sortear(); az.listo = true; render(); hojaOpcionesHoy(); }
     else if (n === 'f-nivel') el.parentNode.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === el)));
@@ -1998,7 +2024,7 @@ const ACC = {
   'ver-off'(){ verOff = !verOff; render(); },
   'poner-capa'(el){
     const id = el.dataset.id;
-    if (el.dataset.ctx === 'hoy') { const o = az.actual, x = o && poolDe(az.modo, o).find(x => x.capa === id && CAMPOS.every(k => k === 'capa' || igual(x, o, k))); if (x) az.actual = x; }
+    if (el.dataset.ctx === 'hoy') { const o = az.actual, x = o && poolDe(az.modo, o).find(x => x.capa === id && CAMPOS.every(k => k === 'capa' || igual(x, o, k))); if (x) { az.actual = x; recalcularTotalHoy(); } }
     else { sel.capa = id; orden = orden.filter(x => x !== 'capa'); orden.push('capa'); }
     marcada = 'capa'; render();
   },
@@ -2026,17 +2052,17 @@ const ACC = {
   'elegir-alt'(el){
     const ctx = el.dataset.ctx, k = el.dataset.k, { m, o } = contextoOutfit(ctx); if (!o) return;
     const a = alternativas(m, o, k, ctx === 'hoy' ? fijasHoy(k) : []).find(x => x.p.id === el.dataset.id); if (!a) return;
-    if (ctx === 'hoy') { az.actual = a.x; if (k === 'trabajo' && az.playera) az.playera = a.x.trabajo; az.recientes.push(claveVisual(a.x)); if (az.recientes.length > 12) az.recientes.shift(); }
+    if (ctx === 'hoy') { az.actual = a.x; if (k === 'trabajo' && az.playera) az.playera = a.x.trabajo; az.recientes.push(claveVisual(a.x)); if (az.recientes.length > 12) az.recientes.shift(); recalcularTotalHoy(); }
     else { if (estiloArmar && estiloDe(a.x, m) !== estiloArmar) { estiloArmar = ''; guardarEstilos(); } ponerEnSel(a.x); }
     /* La ventana no se cierra: se vuelve a dibujar con la nueva prenda marcada, para seguir probando */
     marcada = k; render(); hojaPieza(ctx, k);
   },
-  fijar(el){ const k = el.dataset.k, i = az.fijas.indexOf(k); if (i >= 0) az.fijas.splice(i, 1); else az.fijas.push(k); encender(el, i < 0); render(); },
+  fijar(el){ const k = el.dataset.k, i = az.fijas.indexOf(k); if (i >= 0) az.fijas.splice(i, 1); else az.fijas.push(k); encender(el, i < 0); recalcularTotalHoy(); render(); },
   /* Hoy */
   'az-otro'(){ sortear(); render(); subir(); },
   'hoy-opciones'(){ hojaOpcionesHoy(); },
   'az-playera'(el){ az.playera = el.dataset.id; az.fijas = az.fijas.filter(k => k !== 'trabajo'); sortear(); az.listo = true; render(); hojaOpcionesHoy(); },
-  'az-cambio'(el){ ponerPref('trabajo_con_cambio', !az.cambio); encender(el, az.cambio); az.fijas = az.fijas.filter(k => k !== 'superior'); sortear(); az.listo = true; render(); },
+  'az-cambio'(el){ ponerPref('trabajo_con_cambio', !az.cambio); az.fijas = az.fijas.filter(k => k !== 'superior'); sortear(); az.listo = true; render(); hojaOpcionesHoy(); },
   'az-fav'(){ if (az.actual) { alternarFav(az.modo, az.actual); render(); } },
   'az-ajustar'(){ if (az.actual) abrirEnArmar(az.modo, az.actual); },
   /* Favoritos */
@@ -2065,10 +2091,11 @@ const ACC = {
   tengo(el){
     const p = PID[el.dataset.id]; if (!p) return;
     cambiarPrenda(p, { tengo: !p.tengo }); encender(el, p.tengo);
+    const est = $('pr-estado'); if (est) est.innerHTML = badgePrenda(p);
     /* El interruptor de la hoja también actualiza su gemelo en la lista */
     document.querySelectorAll(`#pantalla [data-a="tengo"][data-id="${CSS.escape(p.id)}"]`).forEach(x => encender(x, p.tengo));
     pintarCuentas();
-    if (el.closest('#hoja')) { const r = $('resumen'); if (r) r.outerHTML = htmlResumen(); return; }
+    if (el.closest('#hoja')) { if (invSub) render(); else { const r = $('resumen'); if (r) r.outerHTML = htmlResumen(); } return; }
     /* En «Me falta» la lista no se reacomoda bajo tu dedo: la fila se marca y se reordena al volver */
     if (tab === 'inventario' && invVista === 'falta' && !invSub) {
       const f = el.closest('.fila'), s = f && f.querySelector('.sub');
@@ -2079,7 +2106,7 @@ const ACC = {
     }
     const r = $('resumen'); if (r) r.outerHTML = htmlResumen();
   },
-  disp(el){ const p = PID[el.dataset.id]; if (!p) return; cambiarPrenda(p, { disponible: !p.disponible }); encender(el, p.disponible); refrescarInventario(); pintarCuentas(); },
+  disp(el){ const p = PID[el.dataset.id]; if (!p) return; cambiarPrenda(p, { disponible: !p.disponible }); encender(el, p.disponible); const est = $('pr-estado'); if (est) est.innerHTML = badgePrenda(p); refrescarInventario(); pintarCuentas(); },
   editar(el){ hojaPrenda(el.dataset.id); },
   'guardar-prenda'(el){
     const p = PID[el.dataset.id]; if (!p) return;
@@ -2109,6 +2136,7 @@ const ACC = {
   'ver-color'(el){ perfSel = el.dataset.v; render(); },
   'ver-estrella'(el){ perfSel = el.dataset.v; perfSub = 'paleta'; render(); subir(); },
   probador(){ hojaProbador(); },
+  'elegir-foto'(){ const inp = $('pr-foto'); if (inp) inp.click(); },
   'editar-perfil'(el){ hojaTexto(el.dataset.k); },
   'guardar-texto'(el){
     const v = $('f-texto').value.trim();

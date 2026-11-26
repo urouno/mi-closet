@@ -1,0 +1,19 @@
+{
+  "name": "Mi clóset",
+  "short_name": "Mi clóset",
+  "description": "Tu estilista de color y combinaciones de outfits",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FBF8F4",
+  "theme_color": "#8A3C2A",
+  "icons": [
+    {
+      "src": "icono.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
