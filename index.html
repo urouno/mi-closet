@@ -375,6 +375,9 @@ details.mas{margin-top:24px}
 details.mas>summary{list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:52px;font-weight:600;cursor:pointer;border-top:1px solid var(--line);padding-top:8px}
 details.mas>summary::-webkit-details-marker{display:none}
 details.mas[open]>summary .flecha{transform:rotate(90deg)}
+details.mas.lec-det{margin-top:12px}
+details.mas.lec-det>summary{min-height:40px;padding:6px 0;font-size:var(--f4);color:var(--ink2)}
+details.mas.lec-det .lec:first-of-type{margin-top:8px}
 
 /* Probador de color */
 .lienzo{position:relative;margin-top:16px;border-radius:16px;overflow:hidden;background:var(--well)}
@@ -1326,19 +1329,22 @@ function medidor(c){
     <div class="esc" aria-hidden="true">${['Bajo', 'Medio', 'M-alto', 'Alto'].map((t, i) => `<span class="${i === c.i ? 'es' : ''}">${t}</span>`).join('')}</div></div>`;
 }
 /* Lectura en palabras simples: cómo queda el contraste y qué color va junto a la cara */
-function lectura(m, o){
-  const meta = metaContraste(), out = [], e = estiloDe(o, m);
-  if (ESTILO[e]) out.push(`<div class="lec"><span class="etq">Tipo de combinación</span><button type="button" class="chip" data-a="ver-estilo" data-v="${e}">${bolitas(ESTILO[e].ej)}${esc(ESTILO[e].nombre)}</button></div>`);
+let verLecturaHoy = false;
+function lectura(m, o, plegable){
+  const meta = metaContraste(), head = [], det = [], e = estiloDe(o, m);
+  if (ESTILO[e]) head.push(`<div class="lec"><span class="etq">Tipo de combinación</span><button type="button" class="chip" data-a="ver-estilo" data-v="${e}">${bolitas(ESTILO[e].ej)}${esc(ESTILO[e].nombre)}</button></div>`);
   const una = (titulo, cat) => {
     const c = contraste(o, cat); if (!c) return;
     const frase = c.dist === 0 ? 'igual al tuyo' : c.dist === 1 ? 'cerca del tuyo' : c.i < meta ? 'más bajo que el tuyo' : 'más alto que el tuyo';
-    out.push(`<div class="lec"><span class="etq">${titulo}</span><span class="nm ${c.dist >= 2 ? 'ojo' : ''}">${c.nombre}, ${frase}</span>${medidor(c)}</div>`);
+    det.push(`<div class="lec"><span class="etq">${titulo}</span><span class="nm ${c.dist >= 2 ? 'ojo' : ''}">${c.nombre}, ${frase}</span>${medidor(c)}</div>`);
   };
   if (m === 'normal') una('Contraste', 'superior');
   else { una(o.superior ? 'Contraste en el trabajo' : 'Contraste', 'trabajo'); if (o.superior) una('Contraste después', 'superior'); }
   const cara = o.superior ? IDX.superior[o.superior] : o.trabajo ? IDX.trabajo[o.trabajo] : null, n = cara ? Number(cara.nivel) || 0 : 0;
-  if (n) out.push(`<div class="lec"><span class="etq">Junto a la cara</span><span class="badge ${n === 5 ? 'oro' : n === 4 ? 'ok' : 'gris'} mt1">${n === 5 ? '★ Color estrella' : n === 4 ? 'Muy buen color' : 'Con moderación'}</span></div>`);
-  return out.join('');
+  if (n) det.push(`<div class="lec"><span class="etq">Junto a la cara</span><span class="badge ${n === 5 ? 'oro' : n === 4 ? 'ok' : 'gris'} mt1">${n === 5 ? '★ Color estrella' : n === 4 ? 'Muy buen color' : 'Con moderación'}</span></div>`);
+  if (!det.length) return head.join('');
+  if (!plegable) return head.concat(det).join('');
+  return head.join('') + `<details class="mas lec-det" data-det="hoy"${verLecturaHoy ? ' open' : ''}><summary>Contraste y color junto a la cara ${FLECHA}</summary>${det.join('')}</details>`;
 }
 /* Una prenda del outfit. Con ctx ('hoy' o 'armar') la fila se toca para cambiarla o fijarla. */
 function filaPieza(ctx, m, o, k){
@@ -1355,14 +1361,14 @@ function vistaOutfit(m, o, ctx){
   const g = k => o[k] ? IDX[k][o[k]] : null;
   const pa = g('pantalon'), z = g('zapatos'), b = g('cinturon'), ca = g('capa') || IDX.capa[SIN_CAPA], a = g('accesorios'), t = g('superior'), w = g('trabajo');
   if (!pa || !z || !b || !a || (m === 'normal' ? !t : !w)) return `<p class="txt2"><b>Outfit incompleto.</b> Usa una prenda que ya no existe en tu hoja.</p>`;
-  const inv = !!R.invisibles[z.id], f = k => filaPieza(ctx, m, o, k);
+  const inv = !!R.invisibles[z.id], f = k => filaPieza(ctx, m, o, k), plegable = ctx === 'hoy';
   const base = f('pantalon') + f('zapatos') + f('cinturon') + f('capa') + f('accesorios');
   /* .outfit: en computadora la figura queda a la izquierda y las prendas a la derecha */
-  if (m === 'normal') return `<div class="outfit"><div class="look"><div class="escena">${figura(t, ca, b, pa, z, a, inv)}</div><div>${lectura(m, o)}</div></div><div class="lista plana">${f('superior')}${base}</div></div>`;
+  if (m === 'normal') return `<div class="outfit"><div class="look"><div class="escena">${figura(t, ca, b, pa, z, a, inv)}</div><div>${lectura(m, o, plegable)}</div></div><div class="lista plana">${f('superior')}${base}</div></div>`;
   if (t) return `<div class="outfit"><div><div class="duo"><figure><div class="escena">${figura(w, ca, b, pa, z, a, inv)}</div><figcaption>En el trabajo</figcaption></figure><figure><div class="escena">${figura(t, ca, b, pa, z, a, inv)}</div><figcaption>Después</figcaption></figure></div>
-    <div class="mt2">${lectura(m, o)}</div><p class="nota mt2">Solo cambia la playera; lo demás se queda igual todo el día.</p></div>
+    <div class="mt2">${lectura(m, o, plegable)}</div><p class="nota mt2">Solo cambia la playera; lo demás se queda igual todo el día.</p></div>
     <div class="lista plana">${f('trabajo')}${f('superior')}${base}</div></div>`;
-  return `<div class="outfit"><div class="look"><div class="escena">${figura(w, ca, b, pa, z, a, inv)}</div><div>${lectura(m, o)}</div></div><div class="lista plana">${f('trabajo')}${base}</div></div>`;
+  return `<div class="outfit"><div class="look"><div class="escena">${figura(w, ca, b, pa, z, a, inv)}</div><div>${lectura(m, o, plegable)}</div></div><div class="lista plana">${f('trabajo')}${base}</div></div>`;
 }
 function pista(ctx, m, o){
   if (ctx === 'hoy' && az.capa === 'Sin capa') return '';
@@ -2237,6 +2243,7 @@ document.addEventListener('input', e => {
 });
 window.addEventListener('error', e => { console.error('Error global:', e.error || e.message); });
 window.addEventListener('unhandledrejection', e => { console.error('Promesa sin capturar:', e.reason); });
+document.addEventListener('toggle', e => { if (e.target && e.target.dataset && e.target.dataset.det === 'hoy') verLecturaHoy = e.target.open; }, true);
 $('velo').addEventListener('click', cerrarHoja);
 $('setup-ok').addEventListener('click', conectar);
 $('setup-url').addEventListener('keydown', e => { if (e.key === 'Enter') conectar(); });
