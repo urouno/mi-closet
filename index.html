@@ -39,7 +39,7 @@
   --sh2:0 12px 32px -6px rgba(39,36,34,.14);
   --serif:"Playfair Display",Georgia,"Times New Roman",serif;
   --sans:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-  --f1:30px; --f2:21px; --f3:16px; --f4:13px; --f5:11px;
+  --f1:24px; --f2:20px; --f3:16px; --f4:13px; --f5:11px;
   --tabs:68px;
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);
@@ -85,13 +85,13 @@ body.con-ctx .wrap{padding-bottom:calc(var(--tabs) + env(safe-area-inset-bottom,
 .mt1{margin-top:8px}.mt2{margin-top:16px}.mt3{margin-top:24px}
 
 /* Encabezado: marca + estado de guardado; luego el título de la pantalla */
-.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 0 8px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0 8px}
 .marca{display:flex;align-items:center;gap:10px;min-width:0}
 .logo{flex:none;width:36px;height:36px;border-radius:11px;background:var(--acc);color:var(--on-acc);display:inline-flex;align-items:center;justify-content:center}
 .logo svg{width:22px;height:22px}
 .marca b{display:block;font-family:var(--serif);font-size:19px;font-weight:600;line-height:1.1;letter-spacing:-.01em}
 .marca small{display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-top:2px}
-.cabeza{padding:12px 0 20px}
+.cabeza{padding:4px 0 12px}
 .atras{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px 0 10px;border-radius:20px;background:var(--surface);border:1px solid var(--line);font-size:var(--f4);font-weight:600;color:var(--ink2)}
 .atras svg{width:16px;height:16px}
 .estado{flex:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:40px;min-height:40px;padding:0 11px;border:1px solid var(--line);border-radius:20px;
@@ -102,27 +102,27 @@ body.con-ctx .wrap{padding-bottom:calc(var(--tabs) + env(safe-area-inset-bottom,
 
 /* Control segmentado */
 .seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;border-radius:14px;background:var(--well);border:1px solid var(--line)}
-.seg button{min-height:40px;border-radius:10px;font-size:15px;font-weight:600;color:var(--ink2);text-align:center;padding:0 8px}
+.seg button{min-height:38px;border-radius:10px;font-size:15px;font-weight:600;color:var(--ink2);text-align:center;padding:0 8px}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--sh1),0 0 0 1px var(--line)}
 .barra-modo{display:flex;gap:8px;align-items:stretch}
 .barra-modo .seg{flex:1}
-.ajustes{flex:none;width:50px;border-radius:14px;border:1px solid var(--line);background:var(--surface);display:inline-flex;align-items:center;justify-content:center;color:var(--ink);position:relative}
+.ajustes{flex:none;width:48px;border-radius:14px;border:1px solid var(--line);background:var(--surface);display:inline-flex;align-items:center;justify-content:center;color:var(--ink);position:relative}
 .ajustes svg{width:22px;height:22px}
 .ajustes[data-on="1"]::after{content:"";position:absolute;top:9px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 2px var(--surface)}
 
 /* Píldoras con desplazamiento horizontal (estilos, filtros, familias) */
-.rotulo{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:24px;min-height:24px}
-.rotulo .link{min-height:32px;font-size:var(--f4)}
-.pills{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none;margin:8px -16px 0;padding:2px 16px 4px;scroll-padding:0 16px}
+.rotulo{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:12px;min-height:24px}
+.rotulo .link{min-height:28px;font-size:var(--f4)}
+.pills{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none;margin:4px -16px 0;padding:2px 16px 4px;scroll-padding:0 16px}
 .pills::-webkit-scrollbar{display:none}
-.pill{flex:none;display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 14px 0 12px;border-radius:20px;background:var(--surface);border:1px solid var(--line);font-size:14px;font-weight:600;color:var(--ink2);white-space:nowrap}
+.pill{flex:none;display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 12px 0 10px;border-radius:18px;background:var(--surface);border:1px solid var(--line);font-size:13.5px;font-weight:600;color:var(--ink2);white-space:nowrap}
 .pill small{font-size:12px;font-weight:600;color:var(--ink3)}
 .pill[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:var(--on-acc)}
 .pill[aria-pressed="true"] small{color:inherit;opacity:.8}
 .pill[aria-pressed="true"] .bolitas i{box-shadow:0 0 0 2px var(--acc),inset 0 0 0 1px rgba(255,255,255,.25)}
-.pill .bolitas i{width:16px;height:16px}
+.pill .bolitas i{width:15px;height:15px}
 .pill .bolitas i+i{margin-left:-5px}
-.pill.simple{padding:0 16px}
+.pill.simple{padding:0 14px}
 
 /* Línea con texto y una acción secundaria */
 .linea{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:16px}
@@ -206,7 +206,7 @@ button.fila:active,.fila .abre:active{background:var(--well)}
 .medidor .esc .es{color:var(--ink);font-weight:700}
 
 /* Figura del outfit (el «avatar» de la ropa) sobre su escenario */
-.escena{position:relative;display:flex;justify-content:center;align-items:flex-start;padding:16px 0 14px;border-radius:16px;background:var(--stage);
+.escena{position:relative;display:flex;justify-content:center;align-items:flex-start;padding:12px 0 10px;border-radius:16px;background:var(--stage);
   background-image:radial-gradient(120% 70% at 50% 0%,rgba(255,255,255,.55),rgba(255,255,255,0) 70%);box-shadow:inset 0 0 0 1px var(--line)}
 :root[data-theme="dark"] .escena{background-image:radial-gradient(120% 70% at 50% 0%,rgba(255,255,255,.05),rgba(255,255,255,0) 70%)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .escena{background-image:radial-gradient(120% 70% at 50% 0%,rgba(255,255,255,.05),rgba(255,255,255,0) 70%)}}
@@ -232,17 +232,19 @@ button.fila:active,.fila .abre:active{background:var(--well)}
 .f-shoe::after{content:"";position:absolute;left:4px;right:4px;bottom:-6px;height:6px;border-radius:50%;background:rgba(39,36,34,.12);filter:blur(2px)}
 .f-shoe i{width:52px;height:17px;border-radius:8px 13px 5px 5px;box-shadow:inset 0 0 0 1px var(--swline),inset 0 -3px 0 rgba(0,0,0,.16)}
 .f-shoe i:first-child{border-radius:13px 8px 5px 5px}
-.lec+.lec{margin-top:16px}
+.lec+.lec{margin-top:14px}
 .lec .nm{margin-top:2px}
 .duo{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.duo figure{display:flex;flex-direction:column;align-items:center;gap:8px}
+.duo figure{display:flex;flex-direction:column;align-items:center;gap:6px}
 .duo .escena{width:100%}
 .duo figcaption{font-size:var(--f5);font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3)}
 @media (max-width:360px){.look{grid-template-columns:1fr}}
 
 /* Tarjeta del outfit */
-.outfit-card{margin-top:24px}
-.outfit-card .cab-out{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.outfit-card{margin-top:12px;padding:12px 14px}
+.outfit-card .cab-out{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.outfit-card .lista.plana{margin:12px -14px -12px}
+.outfit-card .lista.plana .fila{min-height:52px;padding:6px 14px}
 .pz .fin .candado{display:inline-flex;align-items:center;gap:4px;font-size:var(--f5);font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--acc)}
 .pz .fin .candado svg{width:15px;height:15px}
 
@@ -253,10 +255,10 @@ button.fila:active,.fila .abre:active{background:var(--well)}
 .consejo .link{min-height:32px;margin-top:4px;color:var(--ink)}
 
 /* Armar: pasos */
-.paso{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);margin:8px -16px 0;padding:16px 16px 10px;border-bottom:1px solid var(--line)}
+.paso{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);margin:4px -16px 0;padding:10px 16px 8px;border-bottom:1px solid var(--line)}
 .paso .linea{margin-top:0}
-.rail{display:flex;gap:4px;margin-top:10px}
-.rail button{flex:1;min-width:0;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:12px;padding:4px 0}
+.rail{display:flex;gap:4px;margin-top:6px}
+.rail button{flex:1;min-width:0;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-radius:12px;padding:4px 0}
 .rail button small{display:block;max-width:100%;padding:0 2px;font-size:10.5px;font-weight:600;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rail .ahora{background:var(--acc-w)}
 .rail .ahora small{color:var(--acc);font-weight:700}
@@ -264,9 +266,9 @@ button.fila:active,.fila .abre:active{background:var(--well)}
 .dot.lleno{border:0;box-shadow:inset 0 0 0 1px var(--swline)}
 .dot.salto{opacity:.4;border-style:solid}
 .rail .ahora .dot{outline:2px solid var(--acc);outline-offset:2px}
-.grid{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:16px}
-.opt{display:block;width:100%;height:100%;text-align:left;border-radius:18px;background:var(--surface);border:1px solid var(--line);padding:8px 8px 12px;box-shadow:var(--sh1)}
-.swg{display:flex;align-items:center;justify-content:center;height:96px;border-radius:12px;box-shadow:inset 0 0 0 1px var(--swline);position:relative;overflow:hidden;
+.grid{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(144px,1fr));gap:10px;margin-top:12px}
+.opt{display:block;width:100%;height:100%;text-align:left;border-radius:18px;background:var(--surface);border:1px solid var(--line);padding:8px 8px 10px;box-shadow:var(--sh1)}
+.swg{display:flex;align-items:center;justify-content:center;height:82px;border-radius:12px;box-shadow:inset 0 0 0 1px var(--swline);position:relative;overflow:hidden;
   background-image:linear-gradient(160deg,rgba(255,255,255,.16),rgba(255,255,255,0) 55%,rgba(0,0,0,.08))}
 .swg .hex{position:absolute;left:8px;bottom:6px;z-index:1;font-size:10px;font-weight:700;letter-spacing:.06em}
 .opt .nm{margin:10px 4px 0;font-size:15px}
@@ -486,8 +488,14 @@ button.chip .bolitas i{box-shadow:0 0 0 2px var(--sage-w),inset 0 0 0 1px var(--
   .favs{grid-template-columns:1fr 1fr}
 }
 @media (min-width:900px){
+  :root{--f1:30px;--f2:21px}
   html{scrollbar-gutter:stable}
   .wrap,.ctx .in,.tabs .in{max-width:760px}
+  .cabeza{padding:12px 0 20px}
+  .rotulo{margin-top:20px}
+  .outfit-card{margin-top:20px;padding:16px}
+  .outfit-card .lista.plana{margin:16px -16px -16px}
+  .swg{height:96px}
   .hoja{max-width:640px;inset:0;margin:auto;height:fit-content;max-height:86vh;max-height:86dvh;border-radius:24px}
   .hoja .pie{padding-bottom:16px}
   .asa{display:none}
@@ -1260,8 +1268,8 @@ const SECCION = { hoy: 'Hoy', armar: 'Armar', favoritos: 'Favoritos', inventario
 const cabeza = (t, sub, atras) => `<header class="top">${atras
     ? `<button type="button" class="atras" data-a="${atras.a}" data-v="">${ICO_ATRAS}${esc(atras.t)}</button>`
     : `<div class="marca"><span class="logo">${LOGO}</span><div><b>Mi clóset</b><small>${esc(SECCION[tab] || '')}</small></div></div>`}
-  <button class="estado" id="sync" type="button" data-a="actualizar"></button></header>
-  <div class="cabeza"><h1 class="titulo">${esc(t)}</h1>${sub ? `<p class="bajada">${esc(sub)}</p>` : ''}</div>`;
+  <button class="estado" id="sync" type="button" data-a="actualizar"></button></header>`
+  + (t ? `<div class="cabeza"><h1 class="titulo">${esc(t)}</h1>${sub ? `<p class="bajada">${esc(sub)}</p>` : ''}</div>` : `<h1 class="vh">${esc(SECCION[tab] || 'Mi clóset')}</h1>`);
 const seg = (n, ops, val, etiqueta) => `<div class="seg" role="group" aria-label="${esc(etiqueta || '')}">${ops.map(([v, t]) => `<button type="button" data-a="seg" data-n="${n}" data-v="${esc(v)}" aria-pressed="${String(v) === String(val)}">${esc(t)}</button>`).join('')}</div>`;
 const sw = (a, on, attrs, etiqueta) => `<button type="button" class="switch" role="switch" aria-checked="${!!on}" data-a="${a}" ${attrs || ''} aria-label="${esc(etiqueta || '')}"><i></i></button>`;
 const muestra = (p, extra) => { const ok = p && hexOk(p.hex);
@@ -1438,7 +1446,6 @@ const CLAVES_COLOR = [
 ];
 
 /* ---------- Hoy: un outfit y una acción principal ---------- */
-function saludo(){ const h = new Date().getHours(); return h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches'; }
 /* Solo lo que no está en su valor normal; así la línea aparece cuando importa */
 function opcionesActivasHoy(){
   const f = [];
@@ -1452,16 +1459,15 @@ function opcionesActivasHoy(){
 function vHoy(){
   if (!az.listo) { sortear(); az.listo = true; }
   const m = az.modo, o = az.actual, extra = opcionesActivasHoy();
-  const fecha = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
   const tipo = m === 'normal' ? 'Outfit sugerido' : o && o.superior ? 'Trabajo y cambio' : 'Outfit de trabajo';
   const cuerpo = o ? `<section class="card outfit-card">
       <div class="cab-out"><span class="etq">${tipo}</span><span class="badge gris">${az.total > 1 ? '1 de ' + az.total + ' posibles' : 'Única opción'}</span></div>
-      ${az.nota ? `<p class="nota" style="margin-bottom:16px">${esc(az.nota)}</p>` : ''}
+      ${az.nota ? `<p class="nota" style="margin-bottom:12px">${esc(az.nota)}</p>` : ''}
       ${vistaOutfit(m, o, 'hoy')}</section>
       <p class="nota mt2" style="text-align:center">Toca una prenda para cambiarla o fijarla.</p>${pista('hoy', m, o)}`
     : `<div class="vacio"><p class="h2">No hay outfits para sortear</p>${si(pref.solo_inventario) ? 'Con tus prendas disponibles y estas opciones no sale ninguno.' : 'Prueba con otras opciones.'}
         <button class="btn sec" type="button" data-a="hoy-opciones">Cambiar opciones</button></div>`;
-  return cabeza(saludo(), fecha)
+  return cabeza()
     + `<div class="barra-modo">${seg('azmodo', [['normal', 'Normal'], ['trabajo', 'Trabajo']], m, 'Tipo de outfit')}<button type="button" class="ajustes" data-a="hoy-opciones" data-on="${extra ? 1 : 0}" aria-label="Opciones de hoy${extra ? ': ' + esc(extra) : ''}">${ICO_AJUSTES}</button></div>`
     + (extra ? `<p class="nota mt1">${esc(extra)}</p>` : '')
     + pillsEstilo('hoy') + cuerpo;
@@ -1487,7 +1493,7 @@ function vArmar(){
   const cs = cats();
   if (vista === 'final' && !completo()) vista = primeraObligatoria();
   if (vista !== 'final' && !cs.some(c => c.key === vista)) vista = cs.length ? cs[0].key : 'final';
-  const top = cabeza('Arma tu outfit', 'Paso a paso, solo con lo que combina')
+  const top = cabeza()
     + `<div class="barra-modo">${seg('modo', [['normal', 'Normal'], ['trabajo', 'Trabajo']], modo, 'Tipo de outfit')}</div>`;
   if (sinOutfits() || !cs.length) return top + vBloqueo();
   const i = cs.findIndex(c => c.key === vista), actual = cs[i];
@@ -1521,7 +1527,7 @@ function vCategoria(k){
   if (total() > 0) acts.push(`<button type="button" class="link" data-a="completar">Completar al azar</button>`);
   if (p.opcional && !sel[k]) acts.push(`<button type="button" class="link" data-a="sin-cambio">Seguir sin playera de cambio</button>`);
   if (sel[k]) acts.push(`<button type="button" class="link" data-a="quitar" data-k="${k}">Quitar selección</button>`);
-  return `<section class="mt3">
+  return `<section class="mt2">
     <h2 class="h2">${esc(p.q)}</h2>
     <p class="txt2 mt1">${disponibles} ${esc(disponibles === 1 ? p.n[0] : p.n[1])} ${hayOtras && disponibles ? (disponibles === 1 ? 'combina' : 'combinan') + ' con lo que elegiste' : pal}.${p.opcional ? ' Es opcional.' : ''}</p>
     ${si_.length ? `<ul class="grid">${si_.map(tarjeta).join('')}</ul>` : ''}
@@ -1532,9 +1538,9 @@ function vCategoria(k){
 function vFinal(){
   const o = outfitDeSel();
   const n = modo === 'trabajo' && !o.superior ? opciones('superior').disponibles : 0;
-  return `<section class="mt3"><h2 class="h2">${modo === 'normal' ? 'Tu outfit está listo' : o.superior ? 'Tu outfit del día está listo' : 'Tu outfit de trabajo está listo'}</h2>
+  return `<section class="mt2"><h2 class="h2">${modo === 'normal' ? 'Tu outfit está listo' : o.superior ? 'Tu outfit del día está listo' : 'Tu outfit de trabajo está listo'}</h2>
     <p class="txt2 mt1">Toca una prenda para cambiarla.</p>
-    <div class="card mt2">${vistaOutfit(modo, o, 'armar')}</div>${pista('armar', modo, o)}
+    <div class="card outfit-card">${vistaOutfit(modo, o, 'armar')}</div>${pista('armar', modo, o)}
     ${n ? `<div class="acciones mt2"><button type="button" class="link" data-a="agregar-cambio">Agregar playera de cambio (${plural(n, 'opción', 'opciones')})</button></div>` : ''}</section>`;
 }
 function ctxArmar(){
