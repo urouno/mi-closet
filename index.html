@@ -2090,7 +2090,7 @@ const ACC = {
   },
   fijar(el){ const k = el.dataset.k, i = az.fijas.indexOf(k); if (i >= 0) az.fijas.splice(i, 1); else az.fijas.push(k); encender(el, i < 0); recalcularTotalHoy(); render(); },
   /* Hoy */
-  'az-otro'(){ sortear(); render(); subir(); },
+  'az-otro'(){ sortear(); render(); },
   'hoy-opciones'(){ hojaOpcionesHoy(); },
   'az-playera'(el){ az.playera = el.dataset.id; az.fijas = az.fijas.filter(k => k !== 'trabajo'); sortear(); az.listo = true; render(); hojaOpcionesHoy(); },
   'az-cambio'(el){ ponerPref('trabajo_con_cambio', !az.cambio); az.fijas = az.fijas.filter(k => k !== 'superior'); sortear(); az.listo = true; render(); hojaOpcionesHoy(); },
