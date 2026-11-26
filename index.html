@@ -73,7 +73,7 @@ body.con-ctx .wrap{padding-bottom:calc(var(--tabs) + env(safe-area-inset-bottom,
 /* Texto */
 .titulo{font-family:var(--serif);font-size:var(--f1);font-weight:600;line-height:1.15;letter-spacing:-.015em}
 .h2{font-family:var(--serif);font-size:var(--f2);font-weight:600;line-height:1.25;letter-spacing:-.005em}
-.h3{font-family:var(--serif);font-size:19px;font-weight:600;line-height:1.3;margin:32px 0 12px}
+.h3{font-family:var(--serif);font-size:19px;font-weight:600;line-height:1.3;margin:20px 0 10px}
 .etq{display:block;font-size:var(--f5);font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);line-height:1.4}
 .bajada{font-size:var(--f4);color:var(--ink2);margin-top:4px;line-height:1.45}
 .bajada::first-letter{text-transform:uppercase}
@@ -278,7 +278,7 @@ button.fila:active,.fila .abre:active{background:var(--well)}
 .opt.off{opacity:.45;cursor:not-allowed;box-shadow:none}
 
 /* Favoritos */
-.favs{display:grid;grid-template-columns:1fr;gap:16px;margin-top:16px}
+.favs{display:grid;grid-template-columns:1fr;gap:12px;margin-top:10px}
 .fav{background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--sh1);overflow:hidden}
 .fav .abre-fav{display:grid;grid-template-columns:112px 1fr;gap:14px;width:100%;padding:12px;text-align:left;align-items:start}
 .fav .abre-fav:active{background:var(--well)}
@@ -300,22 +300,22 @@ button.fila:active,.fila .abre:active{background:var(--well)}
 
 /* Perfil */
 .heroe{position:relative;overflow:hidden}
-.heroe .estacion{font-family:var(--serif);font-size:27px;font-weight:600;line-height:1.15;margin-top:6px;letter-spacing:-.01em}
-.datos3{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-top:16px}
-.datos3>div{padding:10px 12px;border-radius:12px;background:var(--well);text-align:center}
+.heroe .estacion{font-family:var(--serif);font-size:24px;font-weight:600;line-height:1.15;margin-top:6px;letter-spacing:-.01em}
+.datos3{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-top:12px}
+.datos3>div{padding:8px 10px;border-radius:12px;background:var(--well);text-align:center}
 .datos3 .etq{font-size:10px}
 .datos3 b{display:block;font-size:14px;font-weight:700;margin-top:2px;line-height:1.3}
-.estrellas{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none;margin:12px -16px 0;padding:0 16px 2px}
+.estrellas{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none;margin:10px -16px 0;padding:0 16px 2px}
 .estrellas::-webkit-scrollbar{display:none}
 .estrellas button{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;width:64px;font-size:11.5px;font-weight:600;color:var(--ink2);text-align:center;line-height:1.25}
 .estrellas button b{width:56px;height:56px;border-radius:14px;box-shadow:inset 0 0 0 1px var(--swline)}
-.evitar{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.evitar{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .evitar span{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 10px 0 6px;border-radius:15px;background:var(--well);font-size:12.5px;font-weight:600;color:var(--ink2)}
 .evitar span i{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--swline);position:relative;overflow:hidden}
 .evitar span i::after{content:"";position:absolute;inset:0;background:linear-gradient(to top right,transparent calc(50% - 1px),var(--ojo) calc(50% - 1px),var(--ojo) calc(50% + 1px),transparent calc(50% + 1px))}
-.paleta{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:16px 8px;padding:16px}
-.pal{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:var(--f4);line-height:1.3;color:var(--ink2);text-align:center}
-.pal b{width:52px;height:52px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--swline);position:relative;overflow:hidden}
+.paleta{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:12px 8px;padding:12px}
+.pal{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:var(--f4);line-height:1.25;color:var(--ink2);text-align:center}
+.pal b{width:48px;height:48px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--swline);position:relative;overflow:hidden}
 .pal.sel b{outline:2px solid var(--acc);outline-offset:3px}
 .pal.sel{color:var(--ink);font-weight:700}
 .pal.no b::after{content:"";position:absolute;inset:0;background:linear-gradient(to top right,transparent calc(50% - 1px),var(--ojo) calc(50% - 1px),var(--ojo) calc(50% + 1px),transparent calc(50% + 1px))}
@@ -326,8 +326,8 @@ button.fila:active,.fila .abre:active{background:var(--well)}
 .reglas li{padding:8px 0;color:var(--ink2)}
 .reglas li+li{border-top:1px solid var(--line)}
 .reglas b{color:var(--ink);font-weight:600}
-.probador-card{display:flex;gap:14px;align-items:center;width:100%;text-align:left;margin-top:16px;padding:16px;border-radius:20px;background:var(--acc);color:var(--on-acc);box-shadow:var(--sh1)}
-.probador-card .ico-fila{background:rgba(255,255,255,.16);color:inherit;width:48px;height:48px;border-radius:14px}
+.probador-card{display:flex;gap:14px;align-items:center;width:100%;text-align:left;margin-top:12px;padding:14px 16px;border-radius:20px;background:var(--acc);color:var(--on-acc);box-shadow:var(--sh1)}
+.probador-card .ico-fila{background:rgba(255,255,255,.16);color:inherit;width:44px;height:44px;border-radius:14px}
 .probador-card .tx{flex:1;min-width:0}
 .probador-card .nm{font-family:var(--serif);font-size:19px}
 .probador-card .sub{color:inherit;opacity:.85}
@@ -338,13 +338,15 @@ button.fila:active,.fila .abre:active{background:var(--well)}
 .claves li::before{content:counter(c);flex:none;width:28px;height:28px;border-radius:50%;background:var(--acc-w);color:var(--acc);font-weight:700;font-size:14px;display:inline-flex;align-items:center;justify-content:center}
 
 /* Inventario */
-.resumen-inv .grande{font-family:var(--serif);font-size:34px;font-weight:600;line-height:1}
-.resumen-inv .grande small{font-family:var(--sans);font-size:15px;font-weight:600;color:var(--ink2);margin-left:6px}
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
-.stats>div{padding:10px 12px;border-radius:12px;background:var(--well)}
-.stats b{display:block;font-size:18px;font-weight:700;line-height:1.2}
+.resumen-inv{padding:12px 14px}
+.resumen-inv .cab-res{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.resumen-inv .grande{font-family:var(--serif);font-size:24px;font-weight:600;line-height:1}
+.resumen-inv .grande small{font-family:var(--sans);font-size:13.5px;font-weight:600;color:var(--ink2);margin-left:6px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.stats>div{padding:8px 10px;border-radius:12px;background:var(--well);display:flex;align-items:baseline;gap:6px}
+.stats b{font-size:16px;font-weight:700;line-height:1.2}
 .stats span{font-size:12px;color:var(--ink2)}
-.familias{display:flex;gap:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none;margin:12px -16px 0;padding:2px 16px 4px}
+.familias{display:flex;gap:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none;margin:10px -16px 0;padding:2px 16px 4px}
 .familias::-webkit-scrollbar{display:none}
 .familias button{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;width:58px;font-size:11.5px;font-weight:600;color:var(--ink2);text-align:center;line-height:1.2}
 .familias button b{width:44px;height:44px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--swline);position:relative;overflow:hidden}
@@ -354,8 +356,8 @@ button.fila:active,.fila .abre:active{background:var(--well)}
 .mini-sw{display:inline-flex;flex:none;width:68px}
 .mini-sw i{width:22px;height:22px;border-radius:7px;box-shadow:0 0 0 2px var(--surface),inset 0 0 0 1px var(--swline)}
 .mini-sw i+i{margin-left:-7px}
-.seccion-compra{margin-top:24px}
-.seccion-compra .cab-sec{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.seccion-compra{margin-top:14px}
+.seccion-compra .cab-sec{display:flex;gap:12px;align-items:center;margin-bottom:10px}
 .seccion-compra .cab-sec .h2{font-size:19px}
 
 /* Formularios */
@@ -370,9 +372,9 @@ button.fila:active,.fila .abre:active{background:var(--well)}
 .fila select{-webkit-appearance:none;appearance:none;font-size:15px;min-height:40px;max-width:52vw;background-color:var(--well);border:1px solid var(--line);border-radius:10px;padding:8px 40px 8px 12px}
 .color-in{display:grid;grid-template-columns:56px 1fr;gap:8px}
 .color-in input[type=color]{width:56px;height:50px;border:1px solid var(--line2);border-radius:14px;background:var(--surface);padding:4px}
-.buscar{position:relative;display:block;margin-top:16px}
-.buscar svg{position:absolute;left:16px;top:50%;width:19px;height:19px;margin-top:-9.5px;color:var(--ink3);pointer-events:none}
-.buscar input{padding-left:46px;border-radius:25px}
+.buscar{position:relative;display:block;margin-top:10px}
+.buscar svg{position:absolute;left:15px;top:50%;width:18px;height:18px;margin-top:-9px;color:var(--ink3);pointer-events:none}
+.buscar input{min-height:44px;padding:10px 14px 10px 44px;border-radius:22px}
 details.mas{margin-top:24px}
 details.mas>summary{list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:52px;font-weight:600;cursor:pointer;border-top:1px solid var(--line);padding-top:8px}
 details.mas>summary::-webkit-details-marker{display:none}
@@ -428,9 +430,10 @@ details.mas.lec-det .lec:first-of-type{margin-top:8px}
 .hoja .cuerpo{padding:8px 0 calc(24px + env(safe-area-inset-bottom,0px))}
 .hoja .pie{position:sticky;bottom:0;z-index:2;background:var(--bg);border-top:1px solid var(--line);margin:0 -16px;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
 .hoja .pie+.cuerpo,.hoja .cuerpo:has(+.pie){padding-bottom:24px}
-.hoja .pz-cab{display:flex;align-items:center;gap:14px;padding:8px 0}
-.hoja .pz-cab .sw40{width:64px;height:64px;border-radius:16px}
-.hoja .pz-cab .sw40 svg{width:30px;height:30px}
+.hoja .pz-cab{display:flex;align-items:center;gap:14px;padding:4px 0}
+.hoja .pz-cab .sw40{width:56px;height:56px;border-radius:14px}
+.hoja .pz-cab .sw40 svg{width:26px;height:26px}
+.hoja .mt3{margin-top:14px}
 
 /* Aviso breve: aparece y desaparece, sin moverse */
 .toast{position:fixed;left:16px;right:16px;margin:0 auto;max-width:480px;bottom:calc(var(--tabs) + env(safe-area-inset-bottom,0px) + 16px);z-index:30;
@@ -1393,10 +1396,10 @@ function hojaPieza(ctx, k){
   abrirHoja(etiquetaDe(m, k), `
     <div class="pz-cab">${muestra(p)}<span class="tx"><span class="nm">${esc(p.nombre)}${estrella(p)}</span><span class="sub">${esc([p.hex, p.familia].filter(Boolean).join(' · '))}</span></span></div>
     ${p.nota ? `<p class="txt2 mt1">${esc(p.nota)}</p>` : ''}
-    ${ESTILO[e1] ? `<div class="chips mt2"><span class="chip">${bolitas(ESTILO[e1].ej)}Combinación ${esc(ESTILO[e1].nombre.toLowerCase())}</span></div>` : ''}
-    ${ctx === 'hoy' ? `<div class="lista mt3"><div class="fila"><span class="tx"><span class="nm">Fijar esta prenda</span><span class="sub">Se queda cuando pides otro outfit.</span></span>${sw('fijar', fija, `data-k="${k}"`, 'Fijar esta prenda')}</div></div>` : ''}
+    ${ESTILO[e1] ? `<div class="chips mt1"><span class="chip">${bolitas(ESTILO[e1].ej)}Combinación ${esc(ESTILO[e1].nombre.toLowerCase())}</span></div>` : ''}
+    ${ctx === 'hoy' ? `<div class="lista mt2"><div class="fila"><span class="tx"><span class="nm">Fijar esta prenda</span><span class="sub">Se queda cuando pides otro outfit.</span></span>${sw('fijar', fija, `data-k="${k}"`, 'Fijar esta prenda')}</div></div>` : ''}
     <h3 class="h3">Cambiar por</h3>
-    ${alts.some(a => a.p.id !== o[k]) ? `<p class="nota" style="margin-bottom:8px">Prueba las que quieras; el outfit cambia al momento y esta ventana sigue abierta.</p><div class="lista">${alts.map(({ p: x, x: otro, cambia }) => {
+    ${alts.some(a => a.p.id !== o[k]) ? `<div class="lista">${alts.map(({ p: x, x: otro, cambia }) => {
         if (x.id === o[k]) return `<div class="fila actual">${muestra(x)}<span class="tx"><span class="nm">${esc(x.nombre)}${estrella(x)}</span><span class="sub">Puesta ahora</span></span><span class="fin">✓</span></div>`;
         const e2 = estiloDe(otro, m), nota = ESTILO[e2] ? (e1 !== e2 ? ' · queda ' : ' · sigue ') + ESTILO[e2].nombre.toLowerCase() : '';
         return `<button type="button" class="fila" data-a="elegir-alt" data-ctx="${ctx}" data-k="${k}" data-id="${esc(x.id)}">
@@ -1589,15 +1592,15 @@ function coloresDe(m, o){
   return out;
 }
 function vFavoritos(){
-  if (!D.favoritos.length) return cabeza('Tus favoritos') + `<div class="vacio"><p class="h2">Aún no guardas outfits</p>Cuando un outfit te guste, toca el corazón en Hoy o «Guardar en favoritos» en Armar.
+  if (!D.favoritos.length) return cabeza() + `<div class="vacio"><p class="h2">Aún no guardas outfits</p>Cuando un outfit te guste, toca el corazón en Hoy o «Guardar en favoritos» en Armar.
     <button class="btn prim" type="button" data-a="tab" data-v="hoy">Ver el outfit de hoy</button></div>`;
   let fs = D.favoritos.slice().reverse().filter(f => favFiltro === 'todos' || modoDeFav(f) === favFiltro);
   if (favOrden === 'usados') fs.sort((a, b) => usos(b) - usos(a) || String(b.ultimo_uso || '').localeCompare(String(a.ultimo_uso || '')));
   const n = { todos: D.favoritos.length, normal: D.favoritos.filter(f => modoDeFav(f) === 'normal').length, trabajo: D.favoritos.filter(f => modoDeFav(f) === 'trabajo').length };
-  return cabeza('Tus favoritos', plural(D.favoritos.length, 'outfit guardado', 'outfits guardados') + ', con lo que anotaste de cada uno')
+  return cabeza()
     + `<div class="pills" data-g="fav" role="group" aria-label="Filtrar favoritos">${[['todos', 'Todos'], ['normal', 'Normal'], ['trabajo', 'Trabajo']].map(([v, t]) =>
         `<button type="button" class="pill simple" data-a="fav-filtro" data-v="${v}" aria-pressed="${favFiltro === v}">${t} <small>${n[v]}</small></button>`).join('')}</div>`
-    + `<div class="linea" style="margin-top:8px"><span class="etq">${favOrden === 'usados' ? 'Más usados primero' : 'Más recientes primero'}</span><button type="button" class="link" data-a="fav-orden">${favOrden === 'usados' ? 'Ver recientes' : 'Ver más usados'}</button></div>`
+    + `<div class="linea" style="margin-top:4px"><span class="etq">${favOrden === 'usados' ? 'Más usados primero' : 'Más recientes primero'}</span><button type="button" class="link" style="min-height:36px" data-a="fav-orden">${favOrden === 'usados' ? 'Ver recientes' : 'Ver más usados'}</button></div>`
     + (fs.length ? `<div class="favs">${fs.map(f => {
       const m = modoDeFav(f), o = outfitDeFav(f), falta = faltaDe(o), u = usos(f), e = estiloDe(o, m);
       const yaHoy = String(f.ultimo_uso || '').slice(0, 10) === hoy();
@@ -1670,11 +1673,10 @@ function htmlResumen(){
   const inv = inventariables().filter(p => controla(p.categoria)), mias = inv.filter(p => p.tengo), disp = mias.filter(enUso);
   const n = TODOS.personal.filter(estricto).length + TODOS.trabajo.filter(estricto).length;
   const pct = inv.length ? Math.round(mias.length / inv.length * 100) : 0, pausa = mias.length - disp.length;
-  return `<div class="card resumen-inv" id="resumen"><span class="etq">Tienes</span>
-    <p class="grande mt1">${mias.length}<small>de ${plural(inv.length, 'prenda', 'prendas')} de tu paleta · ${pct} %</small></p>
-    <div class="barra mt2"><i style="width:${pct}%"></i></div>
-    <div class="stats"><div><b>${disp.length}</b><span>disponibles hoy</span></div><div><b>${n}</b><span>${n === 1 ? 'outfit posible' : 'outfits posibles'}</span></div></div>
-    ${pausa ? `<p class="nota mt1"><span class="badge pausa">En pausa</span> ${plural(pausa, 'prenda tuya está', 'prendas tuyas están')} en la lavandería o prestada${pausa === 1 ? '' : 's'}.</p>` : ''}</div>`;
+  return `<div class="card resumen-inv" id="resumen"><div class="cab-res"><p class="grande">${mias.length}<small>de ${plural(inv.length, 'prenda', 'prendas')}</small></p><span class="etq">${pct} %</span></div>
+    <div class="barra mt1"><i style="width:${pct}%"></i></div>
+    <div class="stats"><div><b>${disp.length}</b><span>disponibles</span></div><div><b>${n}</b><span>${n === 1 ? 'outfit posible' : 'outfits posibles'}</span></div></div>
+    ${pausa ? `<p class="nota mt1"><span class="badge pausa">En pausa</span> ${plural(pausa, 'prenda', 'prendas')} en lavandería o prestada${pausa === 1 ? '' : 's'}.</p>` : ''}</div>`;
 }
 /* Familias de color: un toque filtra el inventario por esa familia */
 function htmlFamilias(){
@@ -1688,10 +1690,10 @@ const coincideBusqueda = p => { const q = invBuscar.trim().toLowerCase(); return
 function listaTengo(){
   if (invBuscar.trim()) {
     const l = inventariables().filter(coincideBusqueda);
-    return l.length ? `<div class="lista mt2">${l.map(p => filaPrenda(p, nomCat(p.categoria))).join('')}</div>`
+    return l.length ? `<div class="lista mt1">${l.map(p => filaPrenda(p, nomCat(p.categoria))).join('')}</div>`
       : `<div class="vacio"><p class="h2">Sin resultados</p>No hay prendas que coincidan con «${esc(invBuscar)}».</div>`;
   }
-  return `<div class="lista mt2">${D.categorias.filter(c => FUENTE[c.clave] && FUENTE[c.clave].some(p => !p.fija)).map(c => {
+  return `<div class="lista mt1">${D.categorias.filter(c => FUENTE[c.clave] && FUENTE[c.clave].some(p => !p.fija)).map(c => {
     const l = FUENTE[c.clave].filter(p => !p.fija), n = l.filter(p => p.tengo).length, d = l.filter(enUso).length;
     const mini = l.filter(p => p.tengo && hexOk(p.hex)).concat(l.filter(p => !p.tengo && hexOk(p.hex))).slice(0, 4);
     return `<button type="button" class="fila" data-a="inv-sub" data-v="${esc(c.clave)}"><span class="mini-sw" aria-hidden="true">${mini.map(p => `<i style="${fill(p)}"></i>`).join('')}</span>
@@ -1711,11 +1713,12 @@ function vInventario(){
   if (invSub && CAT[invSub]) {
     const l = FUENTE[invSub].filter(p => !p.fija);
     return cabeza(nomCat(invSub), '', { a: 'inv-sub', t: 'Inventario' })
-      + `<p class="txt2" id="inv-cuantas">${tengoDe(l, controla(invSub))}</p>
-      <p class="nota mt1">El interruptor marca si la tienes. El número dice en cuántos outfits va hoy cada prenda (o cuántos abriría, con «+»). Toca la prenda para ver más.</p><div class="lista mt2" id="inv-lista">${l.map(p => filaPrenda(p, '')).join('')}</div>`;
+      + `<p class="txt2" id="inv-cuantas" style="margin-top:-6px">${tengoDe(l, controla(invSub))}</p>
+      <div class="lista mt2" id="inv-lista">${l.map(p => filaPrenda(p, '')).join('')}</div>
+      <p class="nota mt2">El interruptor marca si la tienes. El número indica en cuántos outfits va hoy cada prenda (o cuántos abriría, con «+»). Toca una prenda para editarla.</p>`;
   }
-  return cabeza('Tu clóset', plural(inventariables().length, 'prenda registrada', 'prendas registradas')) + htmlResumen()
-    + `<div class="mt3">${seg('inv', [['tengo', 'Mis prendas'], ['falta', 'Me falta']], invVista, 'Vista del inventario')}</div>`
+  return cabeza() + htmlResumen()
+    + `<div class="mt2">${seg('inv', [['tengo', 'Mis prendas'], ['falta', 'Me falta']], invVista, 'Vista del inventario')}</div>`
     + (invVista === 'tengo'
       ? `<label class="buscar">${ICO_LUPA}<input type="search" id="inv-buscar" value="${esc(invBuscar)}" placeholder="Buscar por nombre, color o familia" autocomplete="off" enterkeyhint="search" aria-label="Buscar prenda"></label>
         ${htmlFamilias()}<div id="inv-lista">${listaTengo()}</div>`
@@ -1776,20 +1779,20 @@ function vPerfil(){
   if (!fichas.some(r => r.clave === 'contraste')) fichas.push({ etiqueta: 'Contraste', valor: NIV_CONTRASTE[metaContraste()] });
   const evitar = D.evitar.filter(e => hexOk(e.hex));
   const icoGrupo = n => /preferencias/i.test(n) ? ICO_AJUSTES : /reglas/i.test(n) ? ICO_LIBRO : ICO_LISTA;
-  return cabeza('Tu perfil de color') + `<section class="card heroe"><span class="badge acc">Mi análisis de color</span>
+  return cabeza() + `<section class="card heroe"><span class="badge acc">Mi análisis de color</span>
       <p class="estacion">${esc(pref.estacion || 'Sin estación')}</p>
       ${pref.resumen ? `<p class="txt2 mt1">${esc(pref.resumen)}</p>` : ''}
       <div class="datos3">${fichas.slice(-3).map(r => `<div><span class="etq">${esc(String(r.etiqueta || r.clave).replace(/ personal$/i, ''))}</span><b>${esc(r.valor)}</b></div>`).join('')}</div>
       ${estrellas.length ? `<div class="rotulo"><span class="etq">★ Tus colores estrella</span><button type="button" class="link" data-a="perf-sub" data-v="paleta">Ver paleta</button></div>
         <div class="estrellas" data-g="estrellas">${estrellas.map(c => `<button type="button" data-a="ver-estrella" data-v="p:${esc(c.id)}"><b style="${fill(c)}"></b>${esc(corto(c.nombre))}</button>`).join('')}</div>` : ''}
-      ${evitar.length ? `<span class="etq mt3">Evitar cerca de la cara</span><div class="evitar">${evitar.map(e => `<span><i style="background:${e.hex}"></i>${esc(corto(e.nombre))}</span>`).join('')}</div>` : ''}
+      ${evitar.length ? `<span class="etq mt2">Evitar cerca de la cara</span><div class="evitar">${evitar.map(e => `<span><i style="background:${e.hex}"></i>${esc(corto(e.nombre))}</span>`).join('')}</div>` : ''}
       <div class="acciones mt1"><button type="button" class="link" data-a="editar-perfil" data-k="estacion">Editar estación</button>${pref.resumen != null ? `<button type="button" class="link" data-a="editar-perfil" data-k="resumen">Editar resumen</button>` : ''}</div></section>
     <button type="button" class="probador-card" data-a="probador"><span class="ico-fila">${ICO_CAM}</span><span class="tx"><span class="nm">Probador de color</span><span class="sub">Toma una foto de una tela y compárala con tu paleta</span></span>${FLECHA}</button>
-    <div class="lista mt3">
+    <div class="lista mt2">
       ${fila('perf-sub', 'paleta', 'Mi paleta', plural(sup.length, 'color', 'colores') + ' · toca uno para ver su detalle', false, ICO_PALETA)}
       ${fila('perf-sub', 'estilos', 'Estilos de combinación', 'Monocromática, análoga, complementaria y más', false, ICO_CIRCULOS)}
     </div>
-    <div class="lista mt3">${gruposPerfil().map(g => fila('perf-sub', g.n, g.n, '', false, icoGrupo(g.n))).join('')}
+    <div class="lista mt2">${gruposPerfil().map(g => fila('perf-sub', g.n, g.n, '', false, icoGrupo(g.n))).join('')}
       ${fila('perf-sub', 'conexion', 'Conexión con Google Sheets', avisosN ? (cola.length ? plural(cola.length, 'cambio sin enviar', 'cambios sin enviar') : plural(avisos.length, 'aviso', 'avisos') + ' en tus datos') : 'Todo al día', !!avisosN, ICO_NUBE)}</div>`;
 }
 function inspector(key){
@@ -1815,15 +1818,15 @@ function subPerfil(){
     const tira = (titulo, lista, no) => lista.length ? `<h3 class="h3">${titulo}</h3><div class="lista paleta">${lista.map(({ c, key }) =>
       `<button type="button" class="pal ${no ? 'no' : ''} ${selKey === key ? 'sel' : ''}" data-a="ver-color" data-v="${esc(key)}" aria-pressed="${selKey === key}"><b style="${fill(c)}"></b>${esc(corto(c.nombre))}</button>`).join('')}</div>` : '';
     const k = l => l.map(c => ({ c, key: 'p:' + c.id }));
-    return cabeza('Mi paleta', 'Toca un color para ver su detalle', atras) + inspector(selKey)
+    return cabeza('Mi paleta', '', atras) + inspector(selKey)
       + tira('Colores estrella', k(est)) + tira('Muy buenos', k(sup.filter(c => Number(c.nivel) === 4)))
       + tira('Con moderación', k(sup.filter(c => Number(c.nivel) > 0 && Number(c.nivel) <= 3)))
       + tira('Evitar cerca de la cara', D.evitar.map((c, i) => ({ c, key: 'e:' + i })), true);
   }
   if (perfSub === 'estilos') {
-    return cabeza('Estilos de combinación', 'Cada outfit se clasifica solo, según sus colores', atras)
-      + `<p class="txt2">La app mide el tono y la intensidad de la prenda de arriba, la capa, el pantalón y los zapatos, y reconoce el estilo. Elige uno en Hoy (Opciones) o en Armar para ver solo outfits de ese tipo.</p>
-      <div class="mt3">${ESTILOS.map(e => htmlEstilo(e, true)).join('')}</div>
+    return cabeza('Estilos de combinación', '', atras)
+      + `<p class="nota">Cada outfit se clasifica por sus colores. Elige un estilo en Hoy o en Armar para filtrar.</p>
+      <div class="mt2">${ESTILOS.map(e => htmlEstilo(e, true)).join('')}</div>
       <h3 class="h3">Claves que sirven con cualquier estilo</h3>
       <ol class="lista claves">${CLAVES_COLOR.map(([t, d]) => `<li><span class="tx"><span class="nm">${esc(t)}</span><span class="sub">${esc(d)}</span></span></li>`).join('')}</ol>`;
   }
